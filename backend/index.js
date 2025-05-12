@@ -224,19 +224,23 @@ app.get('/invoice-alerts/:id_user', async (req, res) => {
     const threeDaysLaterFormatted = threeDaysLater.toISOString().split('T')[0];
     
     // Query for invoices due tomorrow (urgent alerts)
+    // Modified to exclude both 'paid' and 'radicada' statuses
     const [urgentInvoices] = await db.promise().execute(
       `SELECT id_invoice, invoice_number, total_amount, due_date, invoice_status 
        FROM Invoice 
-       WHERE UserAccount_id_user = ? AND invoice_status != 'paid'
+       WHERE UserAccount_id_user = ? 
+       AND invoice_status NOT IN ('paid', 'radicada')
        AND due_date = ?`,
       [id_user, tomorrowFormatted]
     );
     
     // Query for invoices due in the next 2-3 days (normal alerts)
+    // Modified to exclude both 'paid' and 'radicada' statuses
     const [normalInvoices] = await db.promise().execute(
       `SELECT id_invoice, invoice_number, total_amount, due_date, invoice_status 
        FROM Invoice 
-       WHERE UserAccount_id_user = ? AND invoice_status != 'paid'
+       WHERE UserAccount_id_user = ? 
+       AND invoice_status NOT IN ('paid', 'radicada')
        AND due_date > ? AND due_date <= ?`,
       [id_user, tomorrowFormatted, threeDaysLaterFormatted]
     );

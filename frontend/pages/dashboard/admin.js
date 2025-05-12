@@ -131,20 +131,21 @@ export default function AdminDashboard() {
     doc.setFontSize(18);
     doc.text('Facturas', 14, 22);
     
-    // Table header
-    doc.setFontSize(12);
-    doc.text('Número', 20, 30);
-    doc.text('Usuario', 60, 30);
-    doc.text('Monto', 100, 30);
-    doc.text('Estado', 140, 30);
-    doc.text('Fecha', 180, 30);
+    // Table header - updating to include both dates
+    doc.setFontSize(10); // Smaller font to fit all columns
+    doc.text('Número', 10, 30);
+    doc.text('Usuario', 35, 30);
+    doc.text('Monto', 70, 30);
+    doc.text('Estado', 95, 30);
+    doc.text('Fecha Emisión', 130, 30);
+    doc.text('Fecha Vencimiento', 170, 30);
     
-    // Table content
+    // Table content - updating to include both dates
     facturas.forEach((factura, index) => {
       const y = 40 + (index * 10);
-      doc.text(`#${factura.invoice_number}`, 20, y);
-      doc.text(factura.user_name, 60, y);
-      doc.text(`$${factura.total_amount}`, 100, y);
+      doc.text(`#${factura.invoice_number}`, 10, y);
+      doc.text(factura.user_name, 35, y);
+      doc.text(`$${factura.total_amount}`, 70, y);
       
       // Set text color based on status
       const statusColor = getStatusColor(factura.invoice_status);
@@ -158,11 +159,12 @@ export default function AdminDashboard() {
         doc.setTextColor(0, 0, 0); // Black (default)
       }
       
-      doc.text(factura.invoice_status, 140, y);
+      doc.text(factura.invoice_status, 95, y);
       doc.setTextColor(0, 0, 0); // Reset to black
       
-      const date = formatDate(factura.issue_date || factura.due_date);
-      doc.text(date, 180, y);
+      // Add both dates
+      doc.text(formatDate(factura.issue_date), 130, y);
+      doc.text(formatDate(factura.due_date), 170, y);
     });
     
     doc.save('facturas.pdf');
@@ -436,7 +438,8 @@ export default function AdminDashboard() {
                 <th className="py-3 px-4 text-left">Usuario</th>
                 <th className="py-3 px-4 text-left">Monto</th>
                 <th className="py-3 px-4 text-left">Estado</th>
-                <th className="py-3 px-4 text-left">Fecha</th>
+                <th className="py-3 px-4 text-left">Fecha Emisión</th>
+                <th className="py-3 px-4 text-left">Fecha Vencimiento</th>
               </tr>
             </thead>
             <tbody>
@@ -462,14 +465,17 @@ export default function AdminDashboard() {
                       </span>
                     </td>
                     <td className="py-3 px-4" style={{ color: theme.colors.text.primary }}>
-                      {formatDate(f.issue_date || f.due_date)}
+                      {formatDate(f.issue_date)}
+                    </td>
+                    <td className="py-3 px-4" style={{ color: theme.colors.text.primary }}>
+                      {formatDate(f.due_date)}
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
                   <td 
-                    colSpan="5" 
+                    colSpan="6" 
                     className="py-4 px-4 text-center"
                     style={{ color: theme.colors.text.secondary }}
                   >
