@@ -72,11 +72,11 @@ app.post("/login", async (req, res) => {
     if (rows.length === 0) return res.status(401).json({ message: "Usuario no encontrado o inactivo" });
 
     const user = rows[0];
-    console.log("Usuario encontrado, hash almacenado:", user.password);
-    console.log("Contraseña proporcionada:", password);
+    // console.log("Usuario encontrado, hash almacenado:", user.password);
+    // console.log("Contraseña proporcionada:", password);
     
     const passwordMatch = await bcrypt.compare(password, user.password);
-    console.log("Resultado de la comparación:", passwordMatch);
+    // console.log("Resultado de la comparación:", passwordMatch);
 
     if (!passwordMatch) return res.status(401).json({ message: "Contraseña incorrecta" });
 
@@ -143,6 +143,60 @@ app.get('/notifications/:id_user', async (req, res) => {
     res.json(rows);
   } catch (error) {
     console.error('Error al obtener notificaciones:', error);
+    res.status(500).json({ message: 'Error interno al obtener notificaciones' });
+  }
+});
+
+// Endpoint to get ALL invoices (for admin)
+app.get('/admin/invoices', async (req, res) => {
+  try {
+    // Log the column names for debugging
+    const [columns] = await db.promise().execute(
+      `SHOW COLUMNS FROM Invoice`
+    );
+    console.log('Invoice table columns:', columns.map(col => col.Field));
+    
+    const [rows] = await db.promise().execute(
+      `SELECT i.*, u.user_name 
+       FROM Invoice i
+       LEFT JOIN UserAccount u ON i.UserAccount_id_user = u.id_user`
+    );
+    
+    // Log a sample row to see actual data
+    if (rows.length > 0) {
+      console.log('Sample invoice row:', rows[0]);
+    }
+    
+    res.json(rows);
+  } catch (error) {
+    console.error('Error al obtener todas las facturas:', error);
+    res.status(500).json({ message: 'Error interno al obtener facturas' });
+  }
+});
+
+// Endpoint to get ALL notifications (for admin)
+app.get('/admin/notifications', async (req, res) => {
+  try {
+    // Log the column names for debugging
+    const [columns] = await db.promise().execute(
+      `SHOW COLUMNS FROM Notification`
+    );
+    console.log('Notification table columns:', columns.map(col => col.Field));
+    
+    const [rows] = await db.promise().execute(
+      `SELECT n.*, u.user_name 
+       FROM Notification n
+       LEFT JOIN UserAccount u ON n.UserAccount_id_user = u.id_user`
+    );
+    
+    // Log a sample row to see actual data
+    if (rows.length > 0) {
+      console.log('Sample notification row:', rows[0]);
+    }
+    
+    res.json(rows);
+  } catch (error) {
+    console.error('Error al obtener todas las notificaciones:', error);
     res.status(500).json({ message: 'Error interno al obtener notificaciones' });
   }
 });
