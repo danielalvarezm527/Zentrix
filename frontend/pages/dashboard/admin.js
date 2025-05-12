@@ -9,6 +9,20 @@ export default function AdminDashboard() {
   const [facturas, setFacturas] = useState([]);
   const [notificaciones, setNotificaciones] = useState([]);
   const router = useRouter();
+  
+  // Registration form states
+  const [showRegisterForm, setShowRegisterForm] = useState(false);
+  const [registerData, setRegisterData] = useState({
+    email: '',
+    password: '',
+    nombre: '',
+    apellido: '',
+    documento: '',
+    celular: '',
+    username: '',
+    rol: 'User'
+  });
+  const [registerMessage, setRegisterMessage] = useState({ text: '', isError: false });
 
   useEffect(() => {
     async function fetchData() {
@@ -43,6 +57,57 @@ export default function AdminDashboard() {
       return 'N/A';
     }
   }
+
+  // Handle input changes for registration form
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setRegisterData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Handle user registration
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    
+    try {
+      const res = await fetch('http://localhost:4000/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(registerData)
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok) {
+        // Success - reset form and show message
+        setRegisterMessage({ text: 'Usuario registrado exitosamente', isError: false });
+        setRegisterData({
+          email: '',
+          password: '',
+          nombre: '',
+          apellido: '',
+          documento: '',
+          celular: '',
+          username: '',
+          rol: 'User'
+        });
+        
+        // Automatically hide success message after 3 seconds
+        setTimeout(() => {
+          setRegisterMessage({ text: '', isError: false });
+          setShowRegisterForm(false);
+        }, 3000);
+      } else {
+        // Error
+        setRegisterMessage({ text: data.message || 'Error al registrar usuario', isError: true });
+      }
+    } catch (error) {
+      console.error('Error registering user:', error);
+      setRegisterMessage({ text: 'Error de conexión', isError: true });
+    }
+  };
 
   // Function to export invoices as PDF
   const exportInvoicesToPDF = () => {
@@ -133,19 +198,175 @@ export default function AdminDashboard() {
     <div className="p-8" style={{ backgroundColor: theme.colors.background.default }}>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold" style={{ color: theme.colors.text.primary }}>Dashboard Admin</h1>
-        <button
-          className="px-4 py-2 rounded font-medium"
-          style={{ 
-            backgroundColor: theme.colors.status.error,
-            color: theme.colors.primary.contrast
-          }}
-          onMouseOver={e => e.currentTarget.style.backgroundColor = '#D32F2F'} // Darker red on hover
-          onMouseOut={e => e.currentTarget.style.backgroundColor = theme.colors.status.error}
-          onClick={handleLogout}
-        >
-          Cerrar Sesión
-        </button>
+        <div className="flex space-x-4">
+          <button
+            className="px-4 py-2 rounded font-medium"
+            style={{ 
+              backgroundColor: theme.colors.primary.main,
+              color: theme.colors.primary.contrast
+            }}
+            onMouseOver={e => e.currentTarget.style.backgroundColor = theme.colors.primary.hover}
+            onMouseOut={e => e.currentTarget.style.backgroundColor = theme.colors.primary.main}
+            onClick={() => setShowRegisterForm(!showRegisterForm)}
+          >
+            {showRegisterForm ? 'Cancelar' : 'Registrar Usuario'}
+          </button>
+          <button
+            className="px-4 py-2 rounded font-medium"
+            style={{ 
+              backgroundColor: theme.colors.status.error,
+              color: theme.colors.primary.contrast
+            }}
+            onMouseOver={e => e.currentTarget.style.backgroundColor = '#D32F2F'} // Darker red on hover
+            onMouseOut={e => e.currentTarget.style.backgroundColor = theme.colors.status.error}
+            onClick={handleLogout}
+          >
+            Cerrar Sesión
+          </button>
+        </div>
       </div>
+
+      {/* Registration Form */}
+      {showRegisterForm && (
+        <div className="mb-8 p-6 rounded shadow" style={{ backgroundColor: theme.colors.background.paper }}>
+          <h2 className="text-xl font-semibold mb-4" style={{ color: theme.colors.text.primary }}>Registrar Nuevo Usuario</h2>
+          
+          {registerMessage.text && (
+            <div 
+              className="mb-4 p-3 rounded text-center"
+              style={{ 
+                backgroundColor: registerMessage.isError ? theme.colors.status.error : theme.colors.status.success,
+                color: theme.colors.text.white
+              }}
+            >
+              {registerMessage.text}
+            </div>
+          )}
+          
+          <form onSubmit={handleRegister} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block mb-1" style={{ color: theme.colors.text.primary }}>Nombre</label>
+              <input
+                type="text"
+                name="nombre"
+                value={registerData.nombre}
+                onChange={handleInputChange}
+                className="w-full p-2 border rounded"
+                style={{ borderColor: theme.colors.border.main }}
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block mb-1" style={{ color: theme.colors.text.primary }}>Apellido</label>
+              <input
+                type="text"
+                name="apellido"
+                value={registerData.apellido}
+                onChange={handleInputChange}
+                className="w-full p-2 border rounded"
+                style={{ borderColor: theme.colors.border.main }}
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block mb-1" style={{ color: theme.colors.text.primary }}>Email</label>
+              <input
+                type="email"
+                name="email"
+                value={registerData.email}
+                onChange={handleInputChange}
+                className="w-full p-2 border rounded"
+                style={{ borderColor: theme.colors.border.main }}
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block mb-1" style={{ color: theme.colors.text.primary }}>Nombre de Usuario</label>
+              <input
+                type="text"
+                name="username"
+                value={registerData.username}
+                onChange={handleInputChange}
+                className="w-full p-2 border rounded"
+                style={{ borderColor: theme.colors.border.main }}
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block mb-1" style={{ color: theme.colors.text.primary }}>Contraseña</label>
+              <input
+                type="password"
+                name="password"
+                value={registerData.password}
+                onChange={handleInputChange}
+                className="w-full p-2 border rounded"
+                style={{ borderColor: theme.colors.border.main }}
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block mb-1" style={{ color: theme.colors.text.primary }}>Documento</label>
+              <input
+                type="text"
+                name="documento"
+                value={registerData.documento}
+                onChange={handleInputChange}
+                className="w-full p-2 border rounded"
+                style={{ borderColor: theme.colors.border.main }}
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block mb-1" style={{ color: theme.colors.text.primary }}>Celular</label>
+              <input
+                type="text"
+                name="celular"
+                value={registerData.celular}
+                onChange={handleInputChange}
+                className="w-full p-2 border rounded"
+                style={{ borderColor: theme.colors.border.main }}
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block mb-1" style={{ color: theme.colors.text.primary }}>Rol</label>
+              <select
+                name="rol"
+                value={registerData.rol}
+                onChange={handleInputChange}
+                className="w-full p-2 border rounded"
+                style={{ borderColor: theme.colors.border.main }}
+                required
+              >
+                <option value="User">Usuario</option>
+                <option value="Admin">Administrador</option>
+              </select>
+            </div>
+            
+            <div className="md:col-span-2 mt-4 flex justify-end">
+              <button
+                type="submit"
+                className="px-4 py-2 rounded font-medium"
+                style={{ 
+                  backgroundColor: theme.colors.secondary.main,
+                  color: theme.colors.secondary.contrast
+                }}
+                onMouseOver={e => e.currentTarget.style.backgroundColor = theme.colors.secondary.hover}
+                onMouseOut={e => e.currentTarget.style.backgroundColor = theme.colors.secondary.main}
+              >
+                Registrar
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       <section className="mb-8">
         <div className="flex justify-between items-center mb-4">
