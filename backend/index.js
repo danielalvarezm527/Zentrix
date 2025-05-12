@@ -263,18 +263,49 @@ app.get('/invoice-alerts/:id_user', async (req, res) => {
       }))
     };
     
-    // Save alerts to notification table
-    for (const alert of [...alerts.urgent, ...alerts.normal]) {
-      try {
-        await db.promise().execute(
-          `INSERT INTO Notification (message, sent_date, type, is_read, UserAccount_id_user, UserAccount_Person_id_person)
-           SELECT ?, NOW(), ?, 0, id_user, Person_id_person 
-           FROM UserAccount WHERE id_user = ?`,
-          [alert.message, alert.type === 'urgent' ? 'alerta' : 'info', id_user]
-        );
-      } catch (err) {
-        console.error('Error saving notification:', err);
+    // Save alerts to notification table with improved logging
+    console.log(`Saving ${alerts.urgent.length} urgent alerts and ${alerts.normal.length} normal alerts to database`);
+    
+    // First, get the Person_id_person for this user
+    const [userRows] = await db.promise().execute(
+      `SELECT Person_id_person FROM UserAccount WHERE id_user = ?`,
+      [id_user]
+    );
+    
+    if (userRows.length === 0) {
+      console.error(`User with id ${id_user} not found when trying to save notifications`);
+    } else {
+      const person_id = userRows[0].Person_id_person;
+      
+      // Then, insert each notification with direct values
+      const savedNotifications = [];
+      for (const alert of [...alerts.urgent, ...alerts.normal]) {
+        try {
+          const [result] = await db.promise().execute(
+            `INSERT INTO Notification 
+             (message, sent_date, type, is_read, UserAccount_id_user, UserAccount_Person_id_person)
+             VALUES (?, NOW(), ?, 0, ?, ?)`,
+            [
+              alert.message, 
+              alert.type === 'urgent' ? 'alerta' : 'info', 
+              id_user, 
+              person_id
+            ]
+          );
+          
+          savedNotifications.push({
+            id: result.insertId,
+            message: alert.message,
+            type: alert.type
+          });
+          
+        } catch (err) {
+          console.error('Error saving notification:', err);
+        }
       }
+      
+      console.log(`Successfully saved ${savedNotifications.length} notifications:`, 
+        savedNotifications.map(n => `ID ${n.id}: ${n.type} - "${n.message}"`).join(', '));
     }
     
     res.json(alerts);
