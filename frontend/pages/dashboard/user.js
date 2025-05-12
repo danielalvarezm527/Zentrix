@@ -1,11 +1,13 @@
 // frontend/pages/dashboard/user.js
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
 import theme from '../../styles/theme';
 import { jsPDF } from 'jspdf';
 import * as XLSX from 'xlsx';
 
 export default function UserDashboard() {
   const [facturas, setFacturas] = useState([]);
+  const router = useRouter();
 
   useEffect(() => {
     const id_user = localStorage.getItem('id_user');
@@ -28,6 +30,17 @@ export default function UserDashboard() {
       return 'N/A';
     }
   }
+
+  // Logout function
+  const handleLogout = () => {
+    // Clear all localStorage items
+    localStorage.removeItem('token');
+    localStorage.removeItem('rol');
+    localStorage.removeItem('id_user');
+    
+    // Redirect to login page
+    router.push('/login');
+  };
 
   // Function to export table as PDF
   const exportPDF = () => {
@@ -67,7 +80,21 @@ export default function UserDashboard() {
 
   return (
     <div className="p-8" style={{ backgroundColor: theme.colors.background.default }}>
-      <h1 className="text-3xl font-bold mb-4" style={{ color: theme.colors.text.primary }}>Dashboard Usuario</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold" style={{ color: theme.colors.text.primary }}>Dashboard Usuario</h1>
+        <button
+          className="px-4 py-2 rounded font-medium"
+          style={{ 
+            backgroundColor: theme.colors.status.error,
+            color: theme.colors.primary.contrast
+          }}
+          onMouseOver={e => e.currentTarget.style.backgroundColor = '#D32F2F'} // Darker red on hover
+          onMouseOut={e => e.currentTarget.style.backgroundColor = theme.colors.status.error}
+          onClick={handleLogout}
+        >
+          Cerrar Sesión
+        </button>
+      </div>
 
       <section className="mb-8">
         <div className="flex justify-between items-center mb-4">
