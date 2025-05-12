@@ -201,6 +201,91 @@ app.get('/admin/notifications', async (req, res) => {
   }
 });
 
+// Endpoint to check for upcoming invoice due dates for a specific user
+app.get('/invoice-alerts/:id_user', async (req, res) => {
+  const { id_user } = req.params;
+  
+  try {
+    // Get current date without time portion for comparison
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Tomorrow date
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // Date in 3 days
+    const threeDaysLater = new Date(today);
+    threeDaysLater.setDate(threeDaysLater.getDate() + 3);
+    
+    // Format dates for SQL query
+    const todayFormatted = today.toISOString().split('T')[0];
+    const tomorrowFormatted = tomorrow.toISOString().split('T')[0];
+    const threeDaysLaterFormatted = threeDaysLater.toISOString().split('T')[0];
+    
+    // Query for invoices due tomorrow (urgent alerts)
+    const [urgentInvoices] = await db.promise().execute(
+      `SELECT id_invoice, invoice_number, total_amount, due_date, invoice_status 
+       FROM Invoice 
+       WHERE UserAccount_id_user = ? AND invoice_status != 'paid'
+       AND due_date = ?`,
+      [id_user, tomorrowFormatted]
+    );
+    
+    // Query for invoices due in the next 2-3 days (normal alerts)
+    const [normalInvoices] = await db.promise().execute(
+      `SELECT id_invoice, invoice_number, total_amount, due_date, invoice_status 
+       FROM Invoice 
+       WHERE UserAccount_id_user = ? AND invoice_status != 'paid'
+       AND due_date > ? AND due_date <= ?`,
+      [id_user, tomorrowFormatted, threeDaysLaterFormatted]
+    );
+    
+    // Create alert objects
+    const alerts = {
+      urgent: urgentInvoices.map(invoice => ({
+        type: 'urgent',
+        message: `Factura #${invoice.invoice_number} por $${invoice.total_amount} vence MAÑANA`,
+        invoice_id: invoice.id_invoice,
+        invoice_number: invoice.invoice_number,
+        due_date: invoice.due_date
+      })),
+      normal: normalInvoices.map(invoice => ({
+        type: 'normal',
+        message: `Factura #${invoice.invoice_number} por $${invoice.total_amount} vence pronto (${formatDate(invoice.due_date)})`,
+        invoice_id: invoice.id_invoice,
+        invoice_number: invoice.invoice_number,
+        due_date: invoice.due_date
+      }))
+    };
+    
+    // Save alerts to notification table
+    for (const alert of [...alerts.urgent, ...alerts.normal]) {
+      try {
+        await db.promise().execute(
+          `INSERT INTO Notification (message, sent_date, type, is_read, UserAccount_id_user, UserAccount_Person_id_person)
+           SELECT ?, NOW(), ?, 0, id_user, Person_id_person 
+           FROM UserAccount WHERE id_user = ?`,
+          [alert.message, alert.type === 'urgent' ? 'alerta' : 'info', id_user]
+        );
+      } catch (err) {
+        console.error('Error saving notification:', err);
+      }
+    }
+    
+    res.json(alerts);
+  } catch (error) {
+    console.error('Error checking invoice due dates:', error);
+    res.status(500).json({ message: 'Error checking invoice due dates' });
+  }
+});
+
+// Helper function to format dates for display
+function formatDate(dateString) {
+  const date = new Date(dateString);
+  return date.toLocaleDateString();
+}
+
 app.listen(process.env.PORT, () => {
   console.log(`Servidor corriendo en puerto ${process.env.PORT}`);
 });

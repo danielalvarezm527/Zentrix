@@ -58,6 +58,20 @@ export default function AdminDashboard() {
     }
   }
 
+  // Add this helper function to determine status color
+  function getStatusColor(status) {
+    if (status === 'radicada') {
+      return theme.colors.status.success;
+    } else if (status === 'pendiente' || status === 'devuelta') {
+      return theme.colors.status.warning;
+    } else if (status === 'vencida') {
+      return theme.colors.status.error;
+    } else {
+      // Default case
+      return theme.colors.text.secondary;
+    }
+  }
+
   // Handle input changes for registration form
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -131,7 +145,22 @@ export default function AdminDashboard() {
       doc.text(`#${factura.invoice_number}`, 20, y);
       doc.text(factura.user_name, 60, y);
       doc.text(`$${factura.total_amount}`, 100, y);
+      
+      // Set text color based on status
+      const statusColor = getStatusColor(factura.invoice_status);
+      if (statusColor === theme.colors.status.success) {
+        doc.setTextColor(0, 128, 0); // Green
+      } else if (statusColor === theme.colors.status.warning) {
+        doc.setTextColor(255, 165, 0); // Orange
+      } else if (statusColor === theme.colors.status.error) {
+        doc.setTextColor(255, 0, 0); // Red
+      } else {
+        doc.setTextColor(0, 0, 0); // Black (default)
+      }
+      
       doc.text(factura.invoice_status, 140, y);
+      doc.setTextColor(0, 0, 0); // Reset to black
+      
       const date = formatDate(factura.issue_date || factura.due_date);
       doc.text(date, 180, y);
     });
@@ -426,7 +455,7 @@ export default function AdminDashboard() {
                     <td className="py-3 px-4" style={{ color: theme.colors.text.primary }}>${f.total_amount}</td>
                     <td className="py-3 px-4">
                       <span className="px-2 py-1 rounded text-xs" style={{ 
-                        backgroundColor: f.invoice_status === 'paid' ? theme.colors.status.success : theme.colors.status.warning,
+                        backgroundColor: getStatusColor(f.invoice_status),
                         color: theme.colors.text.white 
                       }}>
                         {f.invoice_status}

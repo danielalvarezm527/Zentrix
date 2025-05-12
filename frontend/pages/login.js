@@ -15,15 +15,30 @@ export default function Login() {
       const res = await fetch('http://localhost:4000/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: email, password }), // Usa "username" aquí si así lo recibe el back
+        body: JSON.stringify({ username: email, password }),
       });
 
       const data = await res.json();
 
       if (res.ok) {
+        // Store user data in localStorage
         localStorage.setItem('token', data.token);
         localStorage.setItem('rol', data.rol);
         localStorage.setItem('id_user', data.id_user);
+
+        // Check for invoice alerts if the user is not an admin
+        if (data.rol !== 'Admin') {
+          try {
+            const alertsRes = await fetch(`http://localhost:4000/invoice-alerts/${data.id_user}`);
+            if (alertsRes.ok) {
+              const alertsData = await alertsRes.json();
+              // Store alerts in localStorage
+              localStorage.setItem('invoiceAlerts', JSON.stringify(alertsData));
+            }
+          } catch (error) {
+            console.error('Error fetching invoice alerts:', error);
+          }
+        }
 
         // Redirigir según el rol
         if (data.rol === 'Admin') {
