@@ -18,6 +18,17 @@ export default function UserDashboard() {
     fetchData();
   }, []);
 
+  // Helper to format any valid date object or string
+  function formatDate(dateObj) {
+    if (!dateObj) return 'N/A';
+    try {
+      return new Date(dateObj).toLocaleDateString();
+    } catch (e) {
+      console.error('Error formatting date:', e);
+      return 'N/A';
+    }
+  }
+
   // Function to export table as PDF
   const exportPDF = () => {
     const doc = new jsPDF();
@@ -39,7 +50,7 @@ export default function UserDashboard() {
       doc.text(`#${factura.invoice_number}`, 20, y);
       doc.text(`$${factura.total_amount}`, 60, y);
       doc.text(factura.invoice_status, 100, y);
-      const date = factura.created_at ? new Date(factura.created_at).toLocaleDateString() : 'N/A';
+      const date = formatDate(factura.issue_date || factura.due_date);
       doc.text(date, 140, y);
     });
     
@@ -121,7 +132,7 @@ export default function UserDashboard() {
                       </span>
                     </td>
                     <td className="py-3 px-4" style={{ color: theme.colors.text.primary }}>
-                      {f.created_at ? new Date(f.created_at).toLocaleDateString() : 'N/A'}
+                      {formatDate(f.issue_date || f.due_date)}
                     </td>
                   </tr>
                 ))
