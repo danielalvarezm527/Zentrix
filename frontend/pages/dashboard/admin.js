@@ -4,6 +4,12 @@ import { useRouter } from 'next/router';
 import theme from '../../styles/theme';
 import { jsPDF } from 'jspdf';
 import * as XLSX from 'xlsx';
+// Import Chart.js components
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement } from 'chart.js';
+import { Pie, Bar } from 'react-chartjs-2';
+
+// Register Chart.js components
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement);
 
 export default function AdminDashboard() {
   const [facturas, setFacturas] = useState([]);
@@ -37,6 +43,17 @@ export default function AdminDashboard() {
   const [registerMessage, setRegisterMessage] = useState({ text: '', isError: false });
 
   const router = useRouter();
+
+  // Chart data states
+  const [invoiceStatusChartData, setInvoiceStatusChartData] = useState({
+    labels: [],
+    datasets: []
+  });
+
+  const [invoiceAmountChartData, setInvoiceAmountChartData] = useState({
+    labels: [],
+    datasets: []
+  });
 
   useEffect(() => {
     async function fetchData() {
@@ -133,6 +150,69 @@ export default function AdminDashboard() {
       setFilteredNotificaciones(filtered);
     }
   }, [notificaciones, notificationFilters]);
+
+  // Add a new useEffect to prepare chart data when facturas changes
+  useEffect(() => {
+    if (facturas.length > 0) {
+      // Prepare data for invoice status pie chart
+      const statusCounts = facturas.reduce((acc, factura) => {
+        const status = factura.invoice_status;
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {});
+
+      const statusLabels = Object.keys(statusCounts);
+      const statusData = Object.values(statusCounts);
+
+      // Colors for each status type
+      const statusColors = statusLabels.map(status => {
+        if (status === 'radicada') return theme.colors.status.success;
+        if (status === 'pendiente' || status === 'devuelta') return theme.colors.status.warning;
+        if (status === 'vencida') return theme.colors.status.error;
+        return theme.colors.primary.main;
+      });
+
+      setInvoiceStatusChartData({
+        labels: statusLabels,
+        datasets: [
+          {
+            data: statusData,
+            backgroundColor: statusColors,
+            borderColor: statusColors.map(color => `${color}88`),
+            borderWidth: 1,
+          },
+        ],
+      });
+
+      // Prepare data for invoice amount bar chart (top 5 users by total amount)
+      const userTotals = facturas.reduce((acc, factura) => {
+        const userName = factura.user_name;
+        acc[userName] = (acc[userName] || 0) + Number(factura.total_amount);
+        return acc;
+      }, {});
+
+      // Sort users by total amount and get top 5
+      const sortedUsers = Object.entries(userTotals)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+
+      const userLabels = sortedUsers.map(entry => entry[0]);
+      const userData = sortedUsers.map(entry => entry[1]);
+
+      setInvoiceAmountChartData({
+        labels: userLabels,
+        datasets: [
+          {
+            label: 'Total por Usuario',
+            data: userData,
+            backgroundColor: theme.colors.primary.main,
+            borderColor: theme.colors.primary.dark,
+            borderWidth: 1,
+          },
+        ],
+      });
+    }
+  }, [facturas]);
 
   const handleInputChange = e => {
     const { name, value } = e.target;
@@ -526,6 +606,79 @@ export default function AdminDashboard() {
           </form>
         </div>
       )}
+
+      {/* Add dashboard charts section */}
+      <section className="mb-8">
+        <h2 className="text-xl font-semibold mb-4" style={{ color: theme.colors.text.primary }}>
+          Dashboard Estadístico
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Invoice Status Chart */}
+          <div className="p-4 rounded shadow" style={{ backgroundColor: theme.colors.background.paper }}>
+            <h3 className="text-lg font-medium mb-4 text-center" style={{ color: theme.colors.text.primary }}>
+              Distribución de Estados de Facturas
+            </h3>
+            <div style={{ height: '300px' }}>
+              {invoiceStatusChartData.labels.length > 0 ? (
+                <Pie
+                  data={invoiceStatusChartData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: 'bottom',
+                      },
+                    },
+                  }}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full" style={{ color: theme.colors.text.secondary }}>
+                  No hay datos disponibles
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Invoice Amount by User Chart */}
+          <div className="p-4 rounded shadow" style={{ backgroundColor: theme.colors.background.paper }}>
+            <h3 className="text-lg font-medium mb-4 text-center" style={{ color: theme.colors.text.primary }}>
+              Top 5 Usuarios por Monto Total
+            </h3>
+            <div style={{ height: '300px' }}>
+              {invoiceAmountChartData.labels.length > 0 ? (
+                <Bar
+                  data={invoiceAmountChartData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        display: false,
+                      },
+                    },
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                        ticks: {
+                          callback: function(value) {
+                            return '$' + formatCurrency(value);
+                          }
+                        }
+                      }
+                    }
+                  }}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full" style={{ color: theme.colors.text.secondary }}>
+                  No hay datos disponibles
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
 
       <section className="mb-8">
         <div className="flex justify-between items-center mb-4">
