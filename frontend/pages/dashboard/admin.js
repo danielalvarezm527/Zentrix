@@ -224,6 +224,15 @@ export default function AdminDashboard() {
     }
   };
 
+  // Add a helper function to format currency values with thousands separators
+  function formatCurrency(amount) {
+    if (amount === null || amount === undefined) return 'N/A';
+    return new Intl.NumberFormat('es-CO', { 
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  }
+
   const getStatusColor = status => {
     if (status === 'radicada') {
       return theme.colors.status.success;
@@ -254,7 +263,7 @@ export default function AdminDashboard() {
       const y = 40 + index * 10;
       doc.text(`#${factura.invoice_number}`, 10, y);
       doc.text(factura.user_name, 35, y);
-      doc.text(`$${factura.total_amount}`, 70, y);
+      doc.text(`$${formatCurrency(factura.total_amount)}`, 70, y);
 
       const statusColor = getStatusColor(factura.invoice_status);
       if (statusColor === theme.colors.status.success) {
@@ -672,7 +681,7 @@ export default function AdminDashboard() {
                       {f.user_name}
                     </td>
                     <td className="py-3 px-4" style={{ color: theme.colors.text.primary }}>
-                      ${f.total_amount}
+                      ${formatCurrency(f.total_amount)}
                     </td>
                     <td className="py-3 px-4">
                       <span

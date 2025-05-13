@@ -92,6 +92,15 @@ export default function UserDashboard() {
     }
   }
 
+  // Add a helper function to format currency values with thousands separators
+  function formatCurrency(amount) {
+    if (amount === null || amount === undefined) return 'N/A';
+    return new Intl.NumberFormat('es-CO', { 
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  }
+
   // Add this helper function to determine status color
   function getStatusColor(status) {
     if (status === 'radicada') {
@@ -156,7 +165,7 @@ export default function UserDashboard() {
     facturas.forEach((factura, index) => {
       const y = 40 + (index * 10);
       doc.text(`#${factura.invoice_number}`, 15, y);
-      doc.text(`$${factura.total_amount}`, 45, y);
+      doc.text(`$${formatCurrency(factura.total_amount)}`, 45, y);
 
       // Set text color based on status
       const statusColor = getStatusColor(factura.invoice_status);
@@ -399,7 +408,9 @@ export default function UserDashboard() {
                     }}
                   >
                     <td className="py-3 px-4" style={{ color: theme.colors.text.primary }}>#{f.invoice_number}</td>
-                    <td className="py-3 px-4" style={{ color: theme.colors.text.primary }}>${f.total_amount}</td>
+                    <td className="py-3 px-4" style={{ color: theme.colors.text.primary }}>
+                      ${formatCurrency(f.total_amount)}
+                    </td>
                     <td className="py-3 px-4">
                       <span className="px-2 py-1 rounded text-xs" style={{ 
                         backgroundColor: getStatusColor(f.invoice_status),
