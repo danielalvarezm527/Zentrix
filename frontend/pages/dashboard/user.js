@@ -7,6 +7,13 @@ import * as XLSX from 'xlsx';
 
 export default function UserDashboard() {
   const [facturas, setFacturas] = useState([]);
+  const [filteredFacturas, setFilteredFacturas] = useState([]);
+  const [invoiceFilters, setInvoiceFilters] = useState({
+    invoiceNumber: '',
+    status: '',
+    fromDate: '',
+    toDate: ''
+  });
   const [alerts, setAlerts] = useState({ urgent: [], normal: [] });
   const [showAlerts, setShowAlerts] = useState(true);
   const router = useRouter();
@@ -35,6 +42,45 @@ export default function UserDashboard() {
     fetchData();
   }, []);
 
+  // Apply filters to invoices whenever filters or invoice data changes
+  useEffect(() => {
+    if (facturas.length > 0) {
+      const filtered = facturas.filter(factura => {
+        // Filter by invoice number
+        if (invoiceFilters.invoiceNumber && 
+            !factura.invoice_number.toLowerCase().includes(invoiceFilters.invoiceNumber.toLowerCase())) {
+          return false;
+        }
+        
+        // Filter by status
+        if (invoiceFilters.status && factura.invoice_status !== invoiceFilters.status) {
+          return false;
+        }
+        
+        // Filter by date range
+        if (invoiceFilters.fromDate) {
+          const fromDate = new Date(invoiceFilters.fromDate);
+          const issueDate = new Date(factura.issue_date);
+          if (issueDate < fromDate) {
+            return false;
+          }
+        }
+        
+        if (invoiceFilters.toDate) {
+          const toDate = new Date(invoiceFilters.toDate);
+          const issueDate = new Date(factura.issue_date);
+          if (issueDate > toDate) {
+            return false;
+          }
+        }
+        
+        return true;
+      });
+      
+      setFilteredFacturas(filtered);
+    }
+  }, [facturas, invoiceFilters]);
+
   // Helper to format any valid date object or string
   function formatDate(dateObj) {
     if (!dateObj) return 'N/A';
@@ -59,6 +105,24 @@ export default function UserDashboard() {
       return theme.colors.text.secondary;
     }
   }
+
+  // Handle filter changes
+  const handleInvoiceFilterChange = (e) => {
+    const { name, value } = e.target;
+    setInvoiceFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const resetInvoiceFilters = () => {
+    setInvoiceFilters({
+      invoiceNumber: '',
+      status: '',
+      fromDate: '',
+      toDate: ''
+    });
+  };
 
   // Logout function
   const handleLogout = () => {
@@ -235,6 +299,83 @@ export default function UserDashboard() {
           </div>
         </div>
 
+        {/* Invoice Filters */}
+        <div className="mb-4 p-4 rounded" style={{ backgroundColor: theme.colors.background.paper }}>
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="font-medium" style={{ color: theme.colors.text.primary }}>Filtros</h3>
+            <button
+              className="text-sm px-2 py-1 rounded"
+              style={{ 
+                backgroundColor: theme.colors.background.default,
+                color: theme.colors.text.secondary
+              }}
+              onClick={resetInvoiceFilters}
+            >
+              Limpiar filtros
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm mb-1" style={{ color: theme.colors.text.secondary }}>
+                Número de factura
+              </label>
+              <input
+                type="text"
+                name="invoiceNumber"
+                value={invoiceFilters.invoiceNumber}
+                onChange={handleInvoiceFilterChange}
+                className="w-full p-2 border rounded text-sm"
+                style={{ borderColor: theme.colors.border.main }}
+                placeholder="Ej: INV001"
+              />
+            </div>
+            <div>
+              <label className="block text-sm mb-1" style={{ color: theme.colors.text.secondary }}>
+                Estado
+              </label>
+              <select
+                name="status"
+                value={invoiceFilters.status}
+                onChange={handleInvoiceFilterChange}
+                className="w-full p-2 border rounded text-sm"
+                style={{ borderColor: theme.colors.border.main }}
+              >
+                <option value="">Todos</option>
+                <option value="radicada">Radicada</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="devuelta">Devuelta</option>
+                <option value="vencida">Vencida</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm mb-1" style={{ color: theme.colors.text.secondary }}>
+                Desde
+              </label>
+              <input
+                type="date"
+                name="fromDate"
+                value={invoiceFilters.fromDate}
+                onChange={handleInvoiceFilterChange}
+                className="w-full p-2 border rounded text-sm"
+                style={{ borderColor: theme.colors.border.main }}
+              />
+            </div>
+            <div>
+              <label className="block text-sm mb-1" style={{ color: theme.colors.text.secondary }}>
+                Hasta
+              </label>
+              <input
+                type="date"
+                name="toDate"
+                value={invoiceFilters.toDate}
+                onChange={handleInvoiceFilterChange}
+                className="w-full p-2 border rounded text-sm"
+                style={{ borderColor: theme.colors.border.main }}
+              />
+            </div>
+          </div>
+        </div>
+
         <div className="rounded shadow overflow-hidden" style={{ backgroundColor: theme.colors.background.card }}>
           <table className="min-w-full">
             <thead>
@@ -247,8 +388,8 @@ export default function UserDashboard() {
               </tr>
             </thead>
             <tbody>
-              {facturas.length > 0 ? (
-                facturas.map((f, index) => (
+              {filteredFacturas.length > 0 ? (
+                filteredFacturas.map((f, index) => (
                   <tr
                     key={f.id_invoice}
                     style={{
@@ -282,7 +423,7 @@ export default function UserDashboard() {
                     className="py-4 px-4 text-center"
                     style={{ color: theme.colors.text.secondary }}
                   >
-                    No hay facturas disponibles
+                    {facturas.length > 0 ? 'No hay resultados para los filtros aplicados' : 'No hay facturas disponibles'}
                   </td>
                 </tr>
               )}
