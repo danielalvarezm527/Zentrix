@@ -21,6 +21,9 @@ db.connect(err => {
   console.log('Conectado a MySQL');
 });
 
+// Store reset tokens in memory (in a production app, these would be stored in a database)
+const resetTokens = {};
+
 // Registro
 app.post("/register", async (req, res) => {
   const { email, password, nombre, apellido, documento, celular, username, rol } = req.body;
@@ -72,11 +75,7 @@ app.post("/login", async (req, res) => {
     if (rows.length === 0) return res.status(401).json({ message: "Usuario no encontrado o inactivo" });
 
     const user = rows[0];
-    // console.log("Usuario encontrado, hash almacenado:", user.password);
-    // console.log("Contraseña proporcionada:", password);
-    
     const passwordMatch = await bcrypt.compare(password, user.password);
-    // console.log("Resultado de la comparación:", passwordMatch);
 
     if (!passwordMatch) return res.status(401).json({ message: "Contraseña incorrecta" });
 
@@ -150,7 +149,6 @@ app.get('/notifications/:id_user', async (req, res) => {
 // Endpoint to get ALL invoices (for admin)
 app.get('/admin/invoices', async (req, res) => {
   try {
-    // Log the column names for debugging
     const [columns] = await db.promise().execute(
       `SHOW COLUMNS FROM Invoice`
     );
@@ -162,7 +160,6 @@ app.get('/admin/invoices', async (req, res) => {
        LEFT JOIN UserAccount u ON i.UserAccount_id_user = u.id_user`
     );
     
-    // Log a sample row to see actual data
     if (rows.length > 0) {
       console.log('Sample invoice row:', rows[0]);
     }
@@ -177,7 +174,6 @@ app.get('/admin/invoices', async (req, res) => {
 // Endpoint to get ALL notifications (for admin)
 app.get('/admin/notifications', async (req, res) => {
   try {
-    // Log the column names for debugging
     const [columns] = await db.promise().execute(
       `SHOW COLUMNS FROM Notification`
     );
@@ -189,7 +185,6 @@ app.get('/admin/notifications', async (req, res) => {
        LEFT JOIN UserAccount u ON n.UserAccount_id_user = u.id_user`
     );
     
-    // Log a sample row to see actual data
     if (rows.length > 0) {
       console.log('Sample notification row:', rows[0]);
     }
@@ -206,25 +201,19 @@ app.get('/invoice-alerts/:id_user', async (req, res) => {
   const { id_user } = req.params;
   
   try {
-    // Get current date without time portion for comparison
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    // Tomorrow date
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     
-    // Date in 3 days
     const threeDaysLater = new Date(today);
     threeDaysLater.setDate(threeDaysLater.getDate() + 3);
     
-    // Format dates for SQL query
     const todayFormatted = today.toISOString().split('T')[0];
     const tomorrowFormatted = tomorrow.toISOString().split('T')[0];
     const threeDaysLaterFormatted = threeDaysLater.toISOString().split('T')[0];
     
-    // Query for invoices due tomorrow (urgent alerts)
-    // Modified to exclude both 'paid' and 'radicada' statuses
     const [urgentInvoices] = await db.promise().execute(
       `SELECT id_invoice, invoice_number, total_amount, due_date, invoice_status 
        FROM Invoice 
@@ -234,8 +223,6 @@ app.get('/invoice-alerts/:id_user', async (req, res) => {
       [id_user, tomorrowFormatted]
     );
     
-    // Query for invoices due in the next 2-3 days (normal alerts)
-    // Modified to exclude both 'paid' and 'radicada' statuses
     const [normalInvoices] = await db.promise().execute(
       `SELECT id_invoice, invoice_number, total_amount, due_date, invoice_status 
        FROM Invoice 
@@ -245,7 +232,6 @@ app.get('/invoice-alerts/:id_user', async (req, res) => {
       [id_user, tomorrowFormatted, threeDaysLaterFormatted]
     );
     
-    // Create alert objects
     const alerts = {
       urgent: urgentInvoices.map(invoice => ({
         type: 'urgent',
@@ -263,10 +249,8 @@ app.get('/invoice-alerts/:id_user', async (req, res) => {
       }))
     };
     
-    // Save alerts to notification table with improved logging
     console.log(`Saving ${alerts.urgent.length} urgent alerts and ${alerts.normal.length} normal alerts to database`);
     
-    // First, get the Person_id_person for this user
     const [userRows] = await db.promise().execute(
       `SELECT Person_id_person FROM UserAccount WHERE id_user = ?`,
       [id_user]
@@ -277,7 +261,6 @@ app.get('/invoice-alerts/:id_user', async (req, res) => {
     } else {
       const person_id = userRows[0].Person_id_person;
       
-      // Then, insert each notification with direct values
       const savedNotifications = [];
       for (const alert of [...alerts.urgent, ...alerts.normal]) {
         try {
@@ -312,6 +295,81 @@ app.get('/invoice-alerts/:id_user', async (req, res) => {
   } catch (error) {
     console.error('Error checking invoice due dates:', error);
     res.status(500).json({ message: 'Error checking invoice due dates' });
+  }
+});
+
+// Request password reset
+app.post("/request-reset", async (req, res) => {
+  const { username } = req.body;
+  
+  if (!username) {
+    return res.status(400).json({ message: "El nombre de usuario es requerido" });
+  }
+  
+  try {
+    const [rows] = await db.promise().execute(
+      `SELECT UA.id_user, P.email 
+       FROM UserAccount UA
+       INNER JOIN Person P ON UA.Person_id_person = P.id_person
+       WHERE UA.user_name = ? AND UA.state = 'activo'`,
+      [username]
+    );
+    
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+    
+    const user = rows[0];
+    
+    const token = Math.random().toString(36).substring(2, 15) + 
+                 Math.random().toString(36).substring(2, 15);
+    
+    resetTokens[token] = {
+      userId: user.id_user,
+      expires: Date.now() + 3600000
+    };
+    
+    res.json({ 
+      message: "Se ha enviado un enlace de restablecimiento a tu correo electrónico",
+      token: token,
+      email: user.email
+    });
+    
+  } catch (error) {
+    console.error("Error en solicitud de restablecimiento:", error);
+    res.status(500).json({ message: "Error al procesar la solicitud" });
+  }
+});
+
+// Reset password
+app.post("/reset-password", async (req, res) => {
+  const { token, newPassword } = req.body;
+  
+  if (!token || !newPassword) {
+    return res.status(400).json({ message: "Token y nueva contraseña requeridos" });
+  }
+  
+  if (!resetTokens[token] || resetTokens[token].expires < Date.now()) {
+    return res.status(401).json({ 
+      message: resetTokens[token] ? "El token ha expirado" : "Token inválido"
+    });
+  }
+  
+  try {
+    const hashedPassword = await bcrypt.hash(newPassword, 8);
+    
+    await db.promise().execute(
+      `UPDATE UserAccount SET password = ? WHERE id_user = ?`,
+      [hashedPassword, resetTokens[token].userId]
+    );
+    
+    delete resetTokens[token];
+    
+    res.json({ message: "Contraseña actualizada con éxito" });
+    
+  } catch (error) {
+    console.error("Error al restablecer contraseña:", error);
+    res.status(500).json({ message: "Error al actualizar la contraseña" });
   }
 });
 

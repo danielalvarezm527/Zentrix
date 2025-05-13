@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 import theme from '../styles/theme';
 
 export default function Login() {
@@ -93,6 +94,16 @@ export default function Login() {
         >
           Entrar
         </button>
+
+        <div className="mt-4 text-center">
+          <Link 
+            href="/forgot-password"
+            className="text-sm hover:underline" 
+            style={{ color: theme.colors.primary.main }}
+          >
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </div>
 
         {mensaje && <p className="mt-4 text-center" style={{ color: theme.colors.status.error }}>{mensaje}</p>}
       </form>
