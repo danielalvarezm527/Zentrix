@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import theme from '../styles/theme';
+import { Rubik } from 'next/font/google';
+
+const rubik = Rubik({ weight: ["700"], subsets: ["latin"] });
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -58,55 +61,58 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: theme.colors.background.default }}>
-      <form onSubmit={handleLogin} className="p-8 rounded shadow-md w-full max-w-md" style={{ backgroundColor: theme.colors.background.paper }}>
-        <h2 className="text-2xl font-bold mb-6 text-center" style={{ color: theme.colors.text.primary }}>Iniciar Sesión</h2>
+    <div className="background">
+      <div className={`watermark ${rubik.className}`}>Zentrix</div>
+      <div className="center">
+        <div className="loginCard">
+        <h1 className={`title ${rubik.className}`}>Zentrix</h1>
+        <form onSubmit={handleLogin} className="p-8 rounded shadow-md w-full max-w-md" style={{ backgroundColor: theme.colors.background.paper }}>
+          <h2 className="loginTitle">Iniciar sesión</h2>
+          <input
+            type="text"
+            placeholder="Usuario"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="input"
+            required
+          />
 
-        <input
-          type="text"
-          placeholder="Usuario"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-2 border rounded mb-4"
-          style={{ borderColor: theme.colors.border.main }}
-          required
-        />
+          <input
+            type="password"
+            placeholder="Contraseña"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="input"
+            required
+          />
+          <div style={{ fontSize: 13, color: "#18404b", textAlign: "center", marginBottom: 16 }}>
+              <Link 
+              href="/forgot-password"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
+            </div>
 
-        <input
-          type="password"
-          placeholder="Contraseña"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-2 border rounded mb-4"
-          style={{ borderColor: theme.colors.border.main }}
-          required
-        />
-
-        <button
-          type="submit"
-          className="w-full font-bold py-2 px-4 rounded"
-          style={{ 
-            backgroundColor: theme.colors.primary.main,
-            color: theme.colors.primary.contrast
-          }}
-          onMouseOver={e => e.currentTarget.style.backgroundColor = theme.colors.primary.hover}
-          onMouseOut={e => e.currentTarget.style.backgroundColor = theme.colors.primary.main}
-        >
-          Entrar
-        </button>
-
-        <div className="mt-4 text-center">
-          <Link 
-            href="/forgot-password"
-            className="text-sm hover:underline" 
-            style={{ color: theme.colors.primary.main }}
+          <button
+            type="submit"
+            className="button"
+            onMouseOver={e => e.currentTarget.style.backgroundColor = theme.colors.primary.hover}
+            onMouseOut={e => e.currentTarget.style.backgroundColor = theme.colors.primary.main}
           >
-            ¿Olvidaste tu contraseña?
-          </Link>
-        </div>
+            Entrar
+          </button>
 
-        {mensaje && <p className="mt-4 text-center" style={{ color: theme.colors.status.error }}>{mensaje}</p>}
-      </form>
+          {mensaje && (
+              <p style={{ marginTop: 12, color: "#EF4444", textAlign: "center" }}>
+                {mensaje}
+              </p>
+            )}
+        </form>
+      </div>
     </div>
+      <div className="footer">
+        HOSPITAL PABLO TOBON URIBE
+      </div>
+    </div>      
   );
 }

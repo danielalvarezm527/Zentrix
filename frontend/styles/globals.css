@@ -7,9 +7,103 @@ body {
   padding: 0;
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
-    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif, Rubik;
 }
 
 * {
   box-sizing: border-box;
+}
+
+.background {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: linear-gradient(to bottom, #fff 0%, #29abe2 100%);
+  position: relative;
+}
+
+.watermark {
+  position: absolute;
+  left: 40px;
+  bottom: 40px;
+  opacity: 0.13;
+  font-size: 120px;
+  font-weight: 700;
+  color: #29ABE2;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+.center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.loginCard {
+  background: linear-gradient(to bottom, #fff 0%, #b3e0f7 100%);
+  border-radius: 32px;
+  border: 1px solid #29ABE2;
+  box-shadow: 0 12px 32px 0 #29abe233;
+  padding: 40px 48px;
+  min-width: 340px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.title {
+  font-size: 40px;
+  font-weight: 700;
+  margin-bottom: 32px;
+  color: #18404b;
+  letter-spacing: 2px;
+}
+
+.loginTitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: #18404b;
+  margin-bottom: 16px;
+}
+
+.input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  background: #fff;
+}
+
+.button {
+  width: 100%;
+  font-weight: 700;
+  padding: 10px 0;
+  border-radius: 6px;
+  background: #29ABE2;
+  color: #fff;
+  font-size: 16px;
+  box-shadow: 0 2px 8px #29abe233;
+  border: none;
+  cursor: pointer;
+  margin-bottom: 8px;
+  transition: background 0.2s;
+}
+
+.button:hover {
+  background: #1789b6;
+}
+
+.footer {
+  font-size: 13px;
+  color: #18404b;
+  opacity: 0.8;
+  text-align: right;
+  padding: 16px;
 }
