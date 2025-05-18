@@ -68,8 +68,9 @@ export default function ResetPassword() {
 
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: theme.colors.background.default }}>
-        <div className="p-8 rounded shadow-md w-full max-w-md" style={{ backgroundColor: theme.colors.background.paper }}>
+      <div className="background">
+        <div className="watermark">Zentrix</div>
+        <div className="min-h-screen flex items-center justify-center">
           <h2 className="text-2xl font-bold mb-6 text-center" style={{ color: theme.colors.text.primary }}>
             Error de Restablecimiento
           </h2>
@@ -94,7 +95,8 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: theme.colors.background.default }}>
+    <div className="background">
+      <div className="watermark">Zentrix</div>
       <div className="p-8 rounded shadow-md w-full max-w-md" style={{ backgroundColor: theme.colors.background.paper }}>
         <h2 className="text-2xl font-bold mb-6 text-center" style={{ color: theme.colors.text.primary }}>
           Establecer Nueva Contraseña

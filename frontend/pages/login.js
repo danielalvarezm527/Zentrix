@@ -16,7 +16,7 @@ export default function Login() {
     e.preventDefault();
 
     try {
-      const res = await fetch('http://localhost:4000/login', {
+      const res = await fetch('http://localhost:3000/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: email, password }),
@@ -66,7 +66,7 @@ export default function Login() {
       <div className="center">
         <div className="loginCard">
         <h1 className={`title ${rubik.className}`}>Zentrix</h1>
-        <form onSubmit={handleLogin} className="p-8 rounded shadow-md w-full max-w-md" style={{ backgroundColor: theme.colors.background.paper }}>
+        <form onSubmit={handleLogin} className="formCard">
           <h2 className="loginTitle">Iniciar sesión</h2>
           <input
             type="text"
