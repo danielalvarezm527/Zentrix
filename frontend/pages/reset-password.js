@@ -97,98 +97,101 @@ export default function ResetPassword() {
   return (
     <div className="background">
       <div className="watermark">Zentrix</div>
-      <div className="p-8 rounded shadow-md w-full max-w-md" style={{ backgroundColor: theme.colors.background.paper }}>
-        <h2 className="text-2xl font-bold mb-6 text-center" style={{ color: theme.colors.text.primary }}>
-          Establecer Nueva Contraseña
-        </h2>
+      <div className="center">
+        <div className="loginCard">
+          <h2 className={`subtitle ${rubik.className}`} style={{ marginBottom: 20 }}>
+            Establecer Nueva Contraseña
+          </h2>
 
-        {message.text && (
-          <div 
-            className="mb-4 p-3 rounded text-center"
-            style={{ 
-              backgroundColor: message.isError ? theme.colors.status.error : theme.colors.status.success,
-              color: theme.colors.text.white
-            }}
-          >
-            {message.text}
-          </div>
-        )}
-
-        {resetComplete ? (
-          <div className="text-center">
-            <p className="mb-6" style={{ color: theme.colors.text.primary }}>
-              Tu contraseña ha sido actualizada con éxito.
-            </p>
-            <button
-              onClick={goToLogin}
-              className="px-4 py-2 rounded font-medium"
+          {message.text && (
+            <div 
+              className="mb-4 p-3 rounded text-center"
               style={{ 
-                backgroundColor: theme.colors.primary.main,
-                color: theme.colors.primary.contrast
+                backgroundColor: message.isError ? theme.colors.status.error : theme.colors.status.success,
+                color: theme.colors.text.white
               }}
-              onMouseOver={e => e.currentTarget.style.backgroundColor = theme.colors.primary.hover}
-              onMouseOut={e => e.currentTarget.style.backgroundColor = theme.colors.primary.main}
             >
-              Iniciar Sesión
-            </button>
+              {message.text}
+            </div>
+          )}
+
+          {resetComplete ? (
+            <div className="text-center">
+              <p style={{ textAlign: "left", marginBottom: 10, color: "#7b8a97", fontSize: "14px"}}>
+                Tu contraseña ha sido actualizada con éxito.
+              </p>
+              <button
+                onClick={goToLogin}
+                className="font-bold py-2 px-4 rounded mb-4 width:100%"
+                style={{ 
+                  backgroundColor: theme.colors.primary.main,
+                  color: theme.colors.primary.contrast,
+                  opacity: isSubmitting ? 0.7 : 1
+                }}
+                onMouseOver={e => e.currentTarget.style.backgroundColor = theme.colors.primary.hover}
+                onMouseOut={e => e.currentTarget.style.backgroundColor = theme.colors.primary.main}
+              >
+                Iniciar Sesión
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit}>
+              <div className="mb-4" style={{ marginBottom: 0,display:"flex", flexDirection:"column", alignItems:"center" }}>
+                <label className="block mb-1" style={{ color: theme.colors.text.primary }}>
+                  Nueva Contraseña
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full p-2 border rounded"
+                  style={{ borderColor: theme.colors.border.main }}
+                  required
+                  minLength="6"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block mb-1" style={{ color: theme.colors.text.primary }}>
+                  Confirmar Contraseña
+                </label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full p-2 border rounded"
+                  style={{ borderColor: theme.colors.border.main }}
+                  required
+                  minLength="6"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="font-bold py-2 px-4 rounded mb-4 width:100%"
+                style={{ 
+                  backgroundColor: theme.colors.primary.main,
+                  color: theme.colors.primary.contrast,
+                  opacity: isSubmitting ? 0.7 : 1
+                }}
+                onMouseOver={e => !isSubmitting && (e.currentTarget.style.backgroundColor = theme.colors.primary.hover)}
+                onMouseOut={e => !isSubmitting && (e.currentTarget.style.backgroundColor = theme.colors.primary.main)}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Procesando...' : 'Establecer Nueva Contraseña'}
+              </button>
+            </form>
+          )}
+
+          <div className="text-center mt-4">
+            <Link 
+              href="/login"
+              className="text-sm hover:underline" 
+              style={{ color: theme.colors.primary.main }}
+            >
+              Volver al inicio de sesión
+            </Link>
           </div>
-        ) : (
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label className="block mb-1" style={{ color: theme.colors.text.primary }}>
-                Nueva Contraseña
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full p-2 border rounded"
-                style={{ borderColor: theme.colors.border.main }}
-                required
-                minLength="6"
-              />
-            </div>
-
-            <div className="mb-4">
-              <label className="block mb-1" style={{ color: theme.colors.text.primary }}>
-                Confirmar Contraseña
-              </label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full p-2 border rounded"
-                style={{ borderColor: theme.colors.border.main }}
-                required
-                minLength="6"
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full font-bold py-2 px-4 rounded mb-4"
-              style={{ 
-                backgroundColor: theme.colors.primary.main,
-                color: theme.colors.primary.contrast,
-                opacity: isSubmitting ? 0.7 : 1
-              }}
-              onMouseOver={e => !isSubmitting && (e.currentTarget.style.backgroundColor = theme.colors.primary.hover)}
-              onMouseOut={e => !isSubmitting && (e.currentTarget.style.backgroundColor = theme.colors.primary.main)}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Procesando...' : 'Establecer Nueva Contraseña'}
-            </button>
-          </form>
-        )}
-
-        <div className="text-center mt-4">
-          <Link 
-            href="/login"
-            className="text-sm hover:underline" 
-            style={{ color: theme.colors.primary.main }}
-          >
-            Volver al inicio de sesión
-          </Link>
         </div>
       </div>
     </div>

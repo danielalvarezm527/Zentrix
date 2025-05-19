@@ -33,10 +33,10 @@ const theme = {
     },
     // Status colors
     status: {
-      success: '#10B981',    // Emerald 500
-      error: '#EF4444',      // Red 500
-      warning: '#F59E0B',    // Amber 500
-      info: '#3B82F6'        // Blue 500
+      success: '#4ade80',   // Verde pastel (Emerald 300)
+      error:   '#f87171',   // Rojo pastel (Red 300)
+      warning: '#fbbf24',   // Amarillo pastel (Yellow 200)
+      info:    '#60a5fa'    // Azul pastel (Blue 300)
     },
     // Border colors
     border: {

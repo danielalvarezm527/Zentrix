@@ -29,6 +29,7 @@ export default function Login() {
         localStorage.setItem('token', data.token);
         localStorage.setItem('rol', data.rol);
         localStorage.setItem('id_user', data.id_user);
+        localStorage.setItem('email', email);
 
         // Check for invoice alerts if the user is not an admin
         if (data.rol !== 'Admin') {
