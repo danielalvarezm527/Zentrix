@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import theme from '../../styles/theme';
 import { jsPDF } from 'jspdf';
 import * as XLSX from 'xlsx';
+import { FaHome, FaBell, FaUserPlus, FaSignOutAlt } from "react-icons/fa";
 // Import Chart.js components
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement } from 'chart.js';
 import { Pie, Bar } from 'react-chartjs-2';
@@ -412,628 +413,645 @@ export default function AdminDashboard() {
     router.push('/login');
   };
 
+console.log('filteredFacturas', filteredFacturas);
+console.log('filteredNotificaciones', filteredNotificaciones);
+
   return (
-    <div className="p-8" style={{ backgroundColor: theme.colors.background.default }}>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold" style={{ color: theme.colors.text.primary }}>
-          Dashboard Admin
-        </h1>
-        <div className="flex space-x-4">
+    <div className="dashboard-container">
+      <aside className="dashboard-sidebar fixed top-0 left-0 flex flex-col items-center py-8 h-screen w-20 z-30 bg-[#27aae1]">
+        <div className='flex flex-col items-center space-y-8 flex-1 w-full'>
           <button
-            className="px-4 py-2 rounded font-medium"
-            style={{
-              backgroundColor: theme.colors.primary.main,
-              color: theme.colors.primary.contrast
+            className="hover:bg-white/10 p-3 rounded-lg transition"
+            title="Menú principal"
+            onClick={() => {document.getElementById('notificaciones-section')?.scrollIntoView({ behavior: 'smooth' });}}
+          >
+            <FaHome size={26} color="#fff" />
+          </button>
+          <button
+            className="hover:bg-white/10 p-3 rounded-lg transition"
+            title="Notificaciones"
+            onClick={() => {document.getElementById('notificaciones-section')?.scrollIntoView({ behavior: 'smooth' });
             }}
-            onMouseOver={e => (e.currentTarget.style.backgroundColor = theme.colors.primary.hover)}
-            onMouseOut={e => (e.currentTarget.style.backgroundColor = theme.colors.primary.main)}
+          >
+            <FaBell size={26} color="#fff" />
+          </button>
+          <button
+            className="hover:bg-white/10 p-3 rounded-lg transition"
+            title="Registrar usuario"
             onClick={() => setShowRegisterForm(!showRegisterForm)}
           >
-            {showRegisterForm ? 'Cancelar' : 'Registrar Usuario'}
-          </button>
-          <button
-            className="px-4 py-2 rounded font-medium"
-            style={{
-              backgroundColor: theme.colors.status.error,
-              color: theme.colors.primary.contrast
-            }}
-            onMouseOver={e => (e.currentTarget.style.backgroundColor = '#D32F2F')}
-            onMouseOut={e => (e.currentTarget.style.backgroundColor = theme.colors.status.error)}
-            onClick={handleLogout}
-          >
-            Cerrar Sesión
+            <FaUserPlus size={26} color="#fff" />
           </button>
         </div>
-      </div>
+        <button
+          className="hover:bg-white/10 p-3 rounded-lg transition"
+          title="Cerrar sesión"
+          onClick={handleLogout}
+        >
+          <FaSignOutAlt size={26} color="#fff" />
+        </button>
+      </aside>
+      <main className='dashboard-main ml-20'>
+        <div className="dashboard-header">
+          <h1 className="dashboard-title">Dashboard Admin</h1>
+        </div>
 
-      {showRegisterForm && (
-        <div className="mb-8 p-6 rounded shadow" style={{ backgroundColor: theme.colors.background.paper }}>
+        {showRegisterForm && (
+          <div className="dashboard-card" style={{ marginBottom: 32 }}>
+            <h2 className="text-xl font-semibold mb-4" style={{ color: theme.colors.text.primary }}>
+              Registrar Nuevo Usuario
+            </h2>
+
+            {registerMessage.text && (
+              <div
+                className="mb-4 p-3 rounded text-center"
+                style={{
+                  backgroundColor: registerMessage.isError
+                    ? theme.colors.status.error
+                    : theme.colors.status.success,
+                  color: theme.colors.text.white
+                }}
+              >
+                {registerMessage.text}
+              </div>
+            )}
+
+            <form onSubmit={handleRegister} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block mb-1" style={{ color: theme.colors.text.primary }}>
+                  Nombre
+                </label>
+                <input
+                  type="text"
+                  name="nombre"
+                  value={registerData.nombre}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border rounded"
+                  style={{ borderColor: theme.colors.border.main }}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1" style={{ color: theme.colors.text.primary }}>
+                  Apellido
+                </label>
+                <input
+                  type="text"
+                  name="apellido"
+                  value={registerData.apellido}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border rounded"
+                  style={{ borderColor: theme.colors.border.main }}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1" style={{ color: theme.colors.text.primary }}>
+                  Email
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={registerData.email}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border rounded"
+                  style={{ borderColor: theme.colors.border.main }}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1" style={{ color: theme.colors.text.primary }}>
+                  Nombre de Usuario
+                </label>
+                <input
+                  type="text"
+                  name="username"
+                  value={registerData.username}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border rounded"
+                  style={{ borderColor: theme.colors.border.main }}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1" style={{ color: theme.colors.text.primary }}>
+                  Contraseña
+                </label>
+                <input
+                  type="password"
+                  name="password"
+                  value={registerData.password}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border rounded"
+                  style={{ borderColor: theme.colors.border.main }}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1" style={{ color: theme.colors.text.primary }}>
+                  Documento
+                </label>
+                <input
+                  type="text"
+                  name="documento"
+                  value={registerData.documento}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border rounded"
+                  style={{ borderColor: theme.colors.border.main }}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1" style={{ color: theme.colors.text.primary }}>
+                  Celular
+                </label>
+                <input
+                  type="text"
+                  name="celular"
+                  value={registerData.celular}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border rounded"
+                  style={{ borderColor: theme.colors.border.main }}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1" style={{ color: theme.colors.text.primary }}>
+                  Rol
+                </label>
+                <select
+                  name="rol"
+                  value={registerData.rol}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border rounded"
+                  style={{ borderColor: theme.colors.border.main }}
+                  required
+                >
+                  <option value="User">Usuario</option>
+                  <option value="Admin">Administrador</option>
+                </select>
+              </div>
+
+              <div className="md:col-span-2 mt-4 flex justify-end space-x-4"> 
+                 <button
+                  type="button"
+                  className="px-4 py-2 rounded font-medium"
+                  style={{
+                    backgroundColor: theme.colors.background.default,
+                    color: theme.colors.text.primary,
+                    border: `1px solid ${theme.colors.border.main}`
+                  }}
+                  onClick={() => setShowRegisterForm(false)}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded font-medium"
+                  style={{
+                    backgroundColor: theme.colors.secondary.main,
+                    color: theme.colors.secondary.contrast
+                  }}
+                  onMouseOver={e => (e.currentTarget.style.backgroundColor = theme.colors.secondary.hover)}
+                  onMouseOut={e => (e.currentTarget.style.backgroundColor = theme.colors.secondary.main)}
+                >
+                  Registrar
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        <section>
           <h2 className="text-xl font-semibold mb-4" style={{ color: theme.colors.text.primary }}>
-            Registrar Nuevo Usuario
+            Dashboard Estadístico
           </h2>
 
-          {registerMessage.text && (
-            <div
-              className="mb-4 p-3 rounded text-center"
-              style={{
-                backgroundColor: registerMessage.isError
-                  ? theme.colors.status.error
-                  : theme.colors.status.success,
-                color: theme.colors.text.white
-              }}
-            >
-              {registerMessage.text}
-            </div>
-          )}
-
-          <form onSubmit={handleRegister} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block mb-1" style={{ color: theme.colors.text.primary }}>
-                Nombre
-              </label>
-              <input
-                type="text"
-                name="nombre"
-                value={registerData.nombre}
-                onChange={handleInputChange}
-                className="w-full p-2 border rounded"
-                style={{ borderColor: theme.colors.border.main }}
-                required
-              />
+          <div className="dashboard-cards">
+            <div className="dashboard-card chart">
+              <h3 className="text-lg font-medium mb-4 text-center" style={{ color: theme.colors.text.primary }}>
+                Distribución de Estados de Facturas
+              </h3>
+              <div style={{ height: '300px' }}>
+                {invoiceStatusChartData.labels.length > 0 ? (
+                  <Pie
+                    data={invoiceStatusChartData}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: {
+                          position: 'bottom',
+                        },
+                      },
+                    }}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full" style={{ color: theme.colors.text.secondary }}>
+                    No hay datos disponibles
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div>
-              <label className="block mb-1" style={{ color: theme.colors.text.primary }}>
-                Apellido
-              </label>
-              <input
-                type="text"
-                name="apellido"
-                value={registerData.apellido}
-                onChange={handleInputChange}
-                className="w-full p-2 border rounded"
-                style={{ borderColor: theme.colors.border.main }}
-                required
-              />
+            <div className="dashboard-card chart">
+              <h3 className="text-lg font-medium mb-4 text-center" style={{ color: theme.colors.text.primary }}>
+                Top 5 Usuarios por Monto Total
+              </h3>
+              <div style={{ height: '300px' }}>
+                {invoiceAmountChartData.labels.length > 0 ? (
+                  <Bar
+                    data={invoiceAmountChartData}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: {
+                          display: false,
+                        },
+                      },
+                      scales: {
+                        y: {
+                          beginAtZero: true,
+                          ticks: {
+                            callback: function(value) {
+                              return '$' + formatCurrency(value);
+                            }
+                          }
+                        }
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full" style={{ color: theme.colors.text.secondary }}>
+                    No hay datos disponibles
+                  </div>
+                )}
+              </div>
             </div>
+          </div>
+        </section>
 
-            <div>
-              <label className="block mb-1" style={{ color: theme.colors.text.primary }}>
-                Email
-              </label>
-              <input
-                type="email"
-                name="email"
-                value={registerData.email}
-                onChange={handleInputChange}
-                className="w-full p-2 border rounded"
-                style={{ borderColor: theme.colors.border.main }}
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block mb-1" style={{ color: theme.colors.text.primary }}>
-                Nombre de Usuario
-              </label>
-              <input
-                type="text"
-                name="username"
-                value={registerData.username}
-                onChange={handleInputChange}
-                className="w-full p-2 border rounded"
-                style={{ borderColor: theme.colors.border.main }}
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block mb-1" style={{ color: theme.colors.text.primary }}>
-                Contraseña
-              </label>
-              <input
-                type="password"
-                name="password"
-                value={registerData.password}
-                onChange={handleInputChange}
-                className="w-full p-2 border rounded"
-                style={{ borderColor: theme.colors.border.main }}
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block mb-1" style={{ color: theme.colors.text.primary }}>
-                Documento
-              </label>
-              <input
-                type="text"
-                name="documento"
-                value={registerData.documento}
-                onChange={handleInputChange}
-                className="w-full p-2 border rounded"
-                style={{ borderColor: theme.colors.border.main }}
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block mb-1" style={{ color: theme.colors.text.primary }}>
-                Celular
-              </label>
-              <input
-                type="text"
-                name="celular"
-                value={registerData.celular}
-                onChange={handleInputChange}
-                className="w-full p-2 border rounded"
-                style={{ borderColor: theme.colors.border.main }}
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block mb-1" style={{ color: theme.colors.text.primary }}>
-                Rol
-              </label>
-              <select
-                name="rol"
-                value={registerData.rol}
-                onChange={handleInputChange}
-                className="w-full p-2 border rounded"
-                style={{ borderColor: theme.colors.border.main }}
-                required
-              >
-                <option value="User">Usuario</option>
-                <option value="Admin">Administrador</option>
-              </select>
-            </div>
-
-            <div className="md:col-span-2 mt-4 flex justify-end">
+        <section >
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold" style={{ color: theme.colors.text.primary }}>
+              Todas las Facturas
+            </h2>
+            <div className='space-x-4' >
               <button
-                type="submit"
-                className="px-4 py-2 rounded font-medium"
+                className="dashboard-btn"
+                style={{background: theme.colors.secondary.main, color: theme.colors.secondary.contrast }}
+                onMouseOver={e => (e.currentTarget.style.backgroundColor = theme.colors.secondary.hover)}
+                onMouseOut={e => (e.currentTarget.style.backgroundColor = theme.colors.secondary.main)}
+                onClick={exportInvoicesToExcel}
+              >
+                Exportar Excel
+              </button>
+              <button
+                className="dashboard-btn"
+                style={{
+                  backgroundColor: theme.colors.primary.main,
+                  color: theme.colors.primary.contrast
+                }}
+                onMouseOver={e => (e.currentTarget.style.backgroundColor = theme.colors.primary.hover)}
+                onMouseOut={e => (e.currentTarget.style.backgroundColor = theme.colors.primary.main)}
+                onClick={exportInvoicesToPDF}
+              >
+                Exportar PDF
+              </button>
+            </div>
+          </div>
+
+          <div className="dashboard-card" style={{ marginBottom: 24 }}>
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="font-medium" style={{ color: theme.colors.text.primary }}>
+                Filtros
+              </h3>
+              <button
+                className="text-sm px-2 py-1 rounded"
+                style={{
+                  backgroundColor: theme.colors.background.default,
+                  color: theme.colors.text.secondary
+                }}
+                onClick={resetInvoiceFilters}
+              >
+                Limpiar filtros
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <div>
+                <label className="block text-sm mb-1" style={{ color: theme.colors.text.secondary }}>
+                  Número de factura
+                </label>
+                <input
+                  type="text"
+                  name="invoiceNumber"
+                  value={invoiceFilters.invoiceNumber}
+                  onChange={handleInvoiceFilterChange}
+                  className="w-full p-2 border rounded text-sm"
+                  style={{ borderColor: theme.colors.border.main }}
+                  placeholder="Ej: INV001"
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-1" style={{ color: theme.colors.text.secondary }}>
+                  Usuario
+                </label>
+                <input
+                  type="text"
+                  name="userName"
+                  value={invoiceFilters.userName}
+                  onChange={handleInvoiceFilterChange}
+                  className="w-full p-2 border rounded text-sm"
+                  style={{ borderColor: theme.colors.border.main }}
+                  placeholder="Nombre de usuario"
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-1" style={{ color: theme.colors.text.secondary }}>
+                  Estado
+                </label>
+                <select
+                  name="status"
+                  value={invoiceFilters.status}
+                  onChange={handleInvoiceFilterChange}
+                  className="w-full p-2 border rounded text-sm"
+                  style={{ borderColor: theme.colors.border.main }}
+                >
+                  <option value="">Todos</option>
+                  <option value="radicada">Radicada</option>
+                  <option value="pendiente">Pendiente</option>
+                  <option value="devuelta">Devuelta</option>
+                  <option value="vencida">Vencida</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm mb-1" style={{ color: theme.colors.text.secondary }}>
+                  Desde
+                </label>
+                <input
+                  type="date"
+                  name="fromDate"
+                  value={invoiceFilters.fromDate}
+                  onChange={handleInvoiceFilterChange}
+                  className="w-full p-2 border rounded text-sm"
+                  style={{ borderColor: theme.colors.border.main }}
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-1" style={{ color: theme.colors.text.secondary }}>
+                  Hasta
+                </label>
+                <input
+                  type="date"
+                  name="toDate"
+                  value={invoiceFilters.toDate}
+                  onChange={handleInvoiceFilterChange}
+                  className="w-full p-2 border rounded text-sm"
+                  style={{ borderColor: theme.colors.border.main }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Tabla */}
+          <div className="dashboard-table-container">
+            <table className="dashboard-table">
+              <thead>
+                <tr style={{ backgroundColor: theme.colors.background.sidebar, color: theme.colors.text.white }}>
+                  <th className="py-3 px-4 text-left">Número</th>
+                  <th className="py-3 px-4 text-left">Usuario</th>
+                  <th className="py-3 px-4 text-left">Monto</th>
+                  <th className="py-3 px-4 text-left">Estado</th>
+                  <th className="py-3 px-4 text-left">Fecha Emisión</th>
+                  <th className="py-3 px-4 text-left">Fecha Vencimiento</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredFacturas.length > 0 ? (
+                  filteredFacturas.map((f, index) => (
+                    <tr
+                      key={f.id_invoice}
+                      style={{
+                        backgroundColor:
+                          index % 2 === 0 ? theme.colors.background.card : theme.colors.background.default
+                      }}
+                    >
+                      <td className="py-3 px-4" style={{ color: theme.colors.text.primary }}>
+                        #{f.invoice_number}
+                      </td>
+                      <td className="py-3 px-4" style={{ color: theme.colors.text.primary }}>
+                        {f.user_name}
+                      </td>
+                      <td className="py-3 px-4" style={{ color: theme.colors.text.primary }}>
+                        ${formatCurrency(f.total_amount)}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span
+                          className="px-2 py-1 rounded text-xs"
+                          style={{
+                            backgroundColor: getStatusColor(f.invoice_status),
+                            color: theme.colors.text.white
+                          }}
+                        >
+                          {f.invoice_status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4" style={{ color: theme.colors.text.primary }}>
+                        {formatDate(f.issue_date)}
+                      </td>
+                      <td className="py-3 px-4" style={{ color: theme.colors.text.primary }}>
+                        {formatDate(f.due_date)}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan="6"
+                      className="py-4 px-4 text-center"
+                      style={{ color: theme.colors.text.secondary }}
+                    >
+                      {facturas.length > 0
+                        ? 'No hay resultados para los filtros aplicados'
+                        : 'No hay facturas disponibles'}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="notificaciones-section">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold" style={{ color: theme.colors.text.primary }}>
+              Todas las Notificaciones
+            </h2>
+            <div className='space-x-4'>
+              <button
+                className="dashboard-btn"
                 style={{
                   backgroundColor: theme.colors.secondary.main,
                   color: theme.colors.secondary.contrast
                 }}
                 onMouseOver={e => (e.currentTarget.style.backgroundColor = theme.colors.secondary.hover)}
                 onMouseOut={e => (e.currentTarget.style.backgroundColor = theme.colors.secondary.main)}
+                onClick={exportNotificationsToExcel}
               >
-                Registrar
+                Exportar Excel
+              </button>
+              <button
+                className="dashboard-btn"
+                style={{
+                  backgroundColor: theme.colors.primary.main,
+                  color: theme.colors.primary.contrast
+                }}
+                onMouseOver={e => (e.currentTarget.style.backgroundColor = theme.colors.primary.hover)}
+                onMouseOut={e => (e.currentTarget.style.backgroundColor = theme.colors.primary.main)}
+                onClick={exportNotificationsToPDF}
+              >
+                Exportar PDF
               </button>
             </div>
-          </form>
-        </div>
-      )}
-
-      {/* Add dashboard charts section */}
-      <section className="mb-8">
-        <h2 className="text-xl font-semibold mb-4" style={{ color: theme.colors.text.primary }}>
-          Dashboard Estadístico
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Invoice Status Chart */}
-          <div className="p-4 rounded shadow" style={{ backgroundColor: theme.colors.background.paper }}>
-            <h3 className="text-lg font-medium mb-4 text-center" style={{ color: theme.colors.text.primary }}>
-              Distribución de Estados de Facturas
-            </h3>
-            <div style={{ height: '300px' }}>
-              {invoiceStatusChartData.labels.length > 0 ? (
-                <Pie
-                  data={invoiceStatusChartData}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: {
-                        position: 'bottom',
-                      },
-                    },
-                  }}
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full" style={{ color: theme.colors.text.secondary }}>
-                  No hay datos disponibles
-                </div>
-              )}
-            </div>
           </div>
 
-          {/* Invoice Amount by User Chart */}
-          <div className="p-4 rounded shadow" style={{ backgroundColor: theme.colors.background.paper }}>
-            <h3 className="text-lg font-medium mb-4 text-center" style={{ color: theme.colors.text.primary }}>
-              Top 5 Usuarios por Monto Total
-            </h3>
-            <div style={{ height: '300px' }}>
-              {invoiceAmountChartData.labels.length > 0 ? (
-                <Bar
-                  data={invoiceAmountChartData}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: {
-                        display: false,
-                      },
-                    },
-                    scales: {
-                      y: {
-                        beginAtZero: true,
-                        ticks: {
-                          callback: function(value) {
-                            return '$' + formatCurrency(value);
-                          }
-                        }
-                      }
-                    }
-                  }}
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full" style={{ color: theme.colors.text.secondary }}>
-                  No hay datos disponibles
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold" style={{ color: theme.colors.text.primary }}>
-            Todas las Facturas
-          </h2>
-          <div className="flex space-x-2">
-            <button
-              className="px-3 py-1 rounded text-sm font-medium"
-              style={{
-                backgroundColor: theme.colors.secondary.main,
-                color: theme.colors.secondary.contrast
-              }}
-              onMouseOver={e => (e.currentTarget.style.backgroundColor = theme.colors.secondary.hover)}
-              onMouseOut={e => (e.currentTarget.style.backgroundColor = theme.colors.secondary.main)}
-              onClick={exportInvoicesToExcel}
-            >
-              Exportar Excel
-            </button>
-            <button
-              className="px-3 py-1 rounded text-sm font-medium"
-              style={{
-                backgroundColor: theme.colors.primary.main,
-                color: theme.colors.primary.contrast
-              }}
-              onMouseOver={e => (e.currentTarget.style.backgroundColor = theme.colors.primary.hover)}
-              onMouseOut={e => (e.currentTarget.style.backgroundColor = theme.colors.primary.main)}
-              onClick={exportInvoicesToPDF}
-            >
-              Exportar PDF
-            </button>
-          </div>
-        </div>
-
-        <div className="mb-4 p-4 rounded" style={{ backgroundColor: theme.colors.background.paper }}>
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="font-medium" style={{ color: theme.colors.text.primary }}>
-              Filtros
-            </h3>
-            <button
-              className="text-sm px-2 py-1 rounded"
-              style={{
-                backgroundColor: theme.colors.background.default,
-                color: theme.colors.text.secondary
-              }}
-              onClick={resetInvoiceFilters}
-            >
-              Limpiar filtros
-            </button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div>
-              <label className="block text-sm mb-1" style={{ color: theme.colors.text.secondary }}>
-                Número de factura
-              </label>
-              <input
-                type="text"
-                name="invoiceNumber"
-                value={invoiceFilters.invoiceNumber}
-                onChange={handleInvoiceFilterChange}
-                className="w-full p-2 border rounded text-sm"
-                style={{ borderColor: theme.colors.border.main }}
-                placeholder="Ej: INV001"
-              />
-            </div>
-            <div>
-              <label className="block text-sm mb-1" style={{ color: theme.colors.text.secondary }}>
-                Usuario
-              </label>
-              <input
-                type="text"
-                name="userName"
-                value={invoiceFilters.userName}
-                onChange={handleInvoiceFilterChange}
-                className="w-full p-2 border rounded text-sm"
-                style={{ borderColor: theme.colors.border.main }}
-                placeholder="Nombre de usuario"
-              />
-            </div>
-            <div>
-              <label className="block text-sm mb-1" style={{ color: theme.colors.text.secondary }}>
-                Estado
-              </label>
-              <select
-                name="status"
-                value={invoiceFilters.status}
-                onChange={handleInvoiceFilterChange}
-                className="w-full p-2 border rounded text-sm"
-                style={{ borderColor: theme.colors.border.main }}
+          <div className="dashboard-card" style={{ marginBottom: 24 }}>
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="font-medium" style={{ color: theme.colors.text.primary }}>
+                Filtros
+              </h3>
+              <button
+                className="text-sm px-2 py-1 rounded"
+                style={{
+                  backgroundColor: theme.colors.background.default,
+                  color: theme.colors.text.secondary
+                }}
+                onClick={resetNotificationFilters}
               >
-                <option value="">Todos</option>
-                <option value="radicada">Radicada</option>
-                <option value="pendiente">Pendiente</option>
-                <option value="devuelta">Devuelta</option>
-                <option value="vencida">Vencida</option>
-              </select>
+                Limpiar filtros
+              </button>
             </div>
-            <div>
-              <label className="block text-sm mb-1" style={{ color: theme.colors.text.secondary }}>
-                Desde
-              </label>
-              <input
-                type="date"
-                name="fromDate"
-                value={invoiceFilters.fromDate}
-                onChange={handleInvoiceFilterChange}
-                className="w-full p-2 border rounded text-sm"
-                style={{ borderColor: theme.colors.border.main }}
-              />
-            </div>
-            <div>
-              <label className="block text-sm mb-1" style={{ color: theme.colors.text.secondary }}>
-                Hasta
-              </label>
-              <input
-                type="date"
-                name="toDate"
-                value={invoiceFilters.toDate}
-                onChange={handleInvoiceFilterChange}
-                className="w-full p-2 border rounded text-sm"
-                style={{ borderColor: theme.colors.border.main }}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm mb-1" style={{ color: theme.colors.text.secondary }}>
+                  Mensaje
+                </label>
+                <input
+                  type="text"
+                  name="message"
+                  value={notificationFilters.message}
+                  onChange={handleNotificationFilterChange}
+                  className="w-full p-2 border rounded text-sm"
+                  style={{ borderColor: theme.colors.border.main }}
+                  placeholder="Buscar en mensaje"
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-1" style={{ color: theme.colors.text.secondary }}>
+                  Usuario
+                </label>
+                <input
+                  type="text"
+                  name="userName"
+                  value={notificationFilters.userName}
+                  onChange={handleNotificationFilterChange}
+                  className="w-full p-2 border rounded text-sm"
+                  style={{ borderColor: theme.colors.border.main }}
+                  placeholder="Nombre de usuario"
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-1" style={{ color: theme.colors.text.secondary }}>
+                  Tipo
+                </label>
+                <select
+                  name="type"
+                  value={notificationFilters.type}
+                  onChange={handleNotificationFilterChange}
+                  className="w-full p-2 border rounded text-sm"
+                  style={{ borderColor: theme.colors.border.main }}
+                >
+                  <option value="">Todos</option>
+                  <option value="info">Info</option>
+                  <option value="alerta">Alerta</option>
+                </select>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="rounded shadow overflow-hidden" style={{ backgroundColor: theme.colors.background.card }}>
-          <table className="min-w-full">
-            <thead>
-              <tr style={{ backgroundColor: theme.colors.background.sidebar, color: theme.colors.text.white }}>
-                <th className="py-3 px-4 text-left">Número</th>
-                <th className="py-3 px-4 text-left">Usuario</th>
-                <th className="py-3 px-4 text-left">Monto</th>
-                <th className="py-3 px-4 text-left">Estado</th>
-                <th className="py-3 px-4 text-left">Fecha Emisión</th>
-                <th className="py-3 px-4 text-left">Fecha Vencimiento</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredFacturas.length > 0 ? (
-                filteredFacturas.map((f, index) => (
-                  <tr
-                    key={f.id_invoice}
-                    style={{
-                      backgroundColor:
-                        index % 2 === 0 ? theme.colors.background.card : theme.colors.background.default
-                    }}
-                  >
-                    <td className="py-3 px-4" style={{ color: theme.colors.text.primary }}>
-                      #{f.invoice_number}
-                    </td>
-                    <td className="py-3 px-4" style={{ color: theme.colors.text.primary }}>
-                      {f.user_name}
-                    </td>
-                    <td className="py-3 px-4" style={{ color: theme.colors.text.primary }}>
-                      ${formatCurrency(f.total_amount)}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span
-                        className="px-2 py-1 rounded text-xs"
-                        style={{
-                          backgroundColor: getStatusColor(f.invoice_status),
-                          color: theme.colors.text.white
-                        }}
-                      >
-                        {f.invoice_status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4" style={{ color: theme.colors.text.primary }}>
-                      {formatDate(f.issue_date)}
-                    </td>
-                    <td className="py-3 px-4" style={{ color: theme.colors.text.primary }}>
-                      {formatDate(f.due_date)}
+          <div className="dashboard-table-container">
+            <table className="dashboard-table">
+              <thead>
+                <tr style={{ backgroundColor: theme.colors.background.sidebar, color: theme.colors.text.white }}>
+                  <th className="py-3 px-4 text-left">Mensaje</th>
+                  <th className="py-3 px-4 text-left">Usuario</th>
+                  <th className="py-3 px-4 text-left">Tipo</th>
+                  <th className="py-3 px-4 text-left">Fecha</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredNotificaciones.length > 0 ? (
+                  filteredNotificaciones.map((n, index) => (
+                    <tr
+                      key={n.id_notification}
+                      style={{
+                        backgroundColor:
+                          index % 2 === 0 ? theme.colors.background.card : theme.colors.background.default
+                      }}
+                    >
+                      <td className="py-3 px-4" style={{ color: theme.colors.text.primary }}>
+                        {n.message}
+                      </td>
+                      <td className="py-3 px-4" style={{ color: theme.colors.text.primary }}>
+                        {n.user_name}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span
+                          className="px-2 py-1 rounded text-xs"
+                          style={{
+                            backgroundColor:
+                              n.type === 'info'
+                                ? theme.colors.status.info
+                                : n.type === 'warning'
+                                ? theme.colors.status.warning
+                                : theme.colors.status.error,
+                            color: theme.colors.text.white
+                          }}
+                        >
+                          {n.type}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4" style={{ color: theme.colors.text.primary }}>
+                        {formatDate(n.sent_date)}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan="4"
+                      className="py-4 px-4 text-center"
+                      style={{ color: theme.colors.text.secondary }}
+                    >
+                      {notificaciones.length > 0
+                        ? 'No hay resultados para los filtros aplicados'
+                        : 'No hay notificaciones disponibles'}
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan="6"
-                    className="py-4 px-4 text-center"
-                    style={{ color: theme.colors.text.secondary }}
-                  >
-                    {facturas.length > 0
-                      ? 'No hay resultados para los filtros aplicados'
-                      : 'No hay facturas disponibles'}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section>
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold" style={{ color: theme.colors.text.primary }}>
-            Todas las Notificaciones
-          </h2>
-          <div className="flex space-x-2">
-            <button
-              className="px-3 py-1 rounded text-sm font-medium"
-              style={{
-                backgroundColor: theme.colors.secondary.main,
-                color: theme.colors.secondary.contrast
-              }}
-              onMouseOver={e => (e.currentTarget.style.backgroundColor = theme.colors.secondary.hover)}
-              onMouseOut={e => (e.currentTarget.style.backgroundColor = theme.colors.secondary.main)}
-              onClick={exportNotificationsToExcel}
-            >
-              Exportar Excel
-            </button>
-            <button
-              className="px-3 py-1 rounded text-sm font-medium"
-              style={{
-                backgroundColor: theme.colors.primary.main,
-                color: theme.colors.primary.contrast
-              }}
-              onMouseOver={e => (e.currentTarget.style.backgroundColor = theme.colors.primary.hover)}
-              onMouseOut={e => (e.currentTarget.style.backgroundColor = theme.colors.primary.main)}
-              onClick={exportNotificationsToPDF}
-            >
-              Exportar PDF
-            </button>
+                )}
+              </tbody>
+            </table>
           </div>
-        </div>
-
-        <div className="mb-4 p-4 rounded" style={{ backgroundColor: theme.colors.background.paper }}>
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="font-medium" style={{ color: theme.colors.text.primary }}>
-              Filtros
-            </h3>
-            <button
-              className="text-sm px-2 py-1 rounded"
-              style={{
-                backgroundColor: theme.colors.background.default,
-                color: theme.colors.text.secondary
-              }}
-              onClick={resetNotificationFilters}
-            >
-              Limpiar filtros
-            </button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm mb-1" style={{ color: theme.colors.text.secondary }}>
-                Mensaje
-              </label>
-              <input
-                type="text"
-                name="message"
-                value={notificationFilters.message}
-                onChange={handleNotificationFilterChange}
-                className="w-full p-2 border rounded text-sm"
-                style={{ borderColor: theme.colors.border.main }}
-                placeholder="Buscar en mensaje"
-              />
-            </div>
-            <div>
-              <label className="block text-sm mb-1" style={{ color: theme.colors.text.secondary }}>
-                Usuario
-              </label>
-              <input
-                type="text"
-                name="userName"
-                value={notificationFilters.userName}
-                onChange={handleNotificationFilterChange}
-                className="w-full p-2 border rounded text-sm"
-                style={{ borderColor: theme.colors.border.main }}
-                placeholder="Nombre de usuario"
-              />
-            </div>
-            <div>
-              <label className="block text-sm mb-1" style={{ color: theme.colors.text.secondary }}>
-                Tipo
-              </label>
-              <select
-                name="type"
-                value={notificationFilters.type}
-                onChange={handleNotificationFilterChange}
-                className="w-full p-2 border rounded text-sm"
-                style={{ borderColor: theme.colors.border.main }}
-              >
-                <option value="">Todos</option>
-                <option value="info">Info</option>
-                <option value="alerta">Alerta</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded shadow overflow-hidden" style={{ backgroundColor: theme.colors.background.card }}>
-          <table className="min-w-full">
-            <thead>
-              <tr style={{ backgroundColor: theme.colors.background.sidebar, color: theme.colors.text.white }}>
-                <th className="py-3 px-4 text-left">Mensaje</th>
-                <th className="py-3 px-4 text-left">Usuario</th>
-                <th className="py-3 px-4 text-left">Tipo</th>
-                <th className="py-3 px-4 text-left">Fecha</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredNotificaciones.length > 0 ? (
-                filteredNotificaciones.map((n, index) => (
-                  <tr
-                    key={n.id_notification}
-                    style={{
-                      backgroundColor:
-                        index % 2 === 0 ? theme.colors.background.card : theme.colors.background.default
-                    }}
-                  >
-                    <td className="py-3 px-4" style={{ color: theme.colors.text.primary }}>
-                      {n.message}
-                    </td>
-                    <td className="py-3 px-4" style={{ color: theme.colors.text.primary }}>
-                      {n.user_name}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span
-                        className="px-2 py-1 rounded text-xs"
-                        style={{
-                          backgroundColor:
-                            n.type === 'info'
-                              ? theme.colors.status.info
-                              : n.type === 'warning'
-                              ? theme.colors.status.warning
-                              : theme.colors.status.error,
-                          color: theme.colors.text.white
-                        }}
-                      >
-                        {n.type}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4" style={{ color: theme.colors.text.primary }}>
-                      {formatDate(n.sent_date)}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan="4"
-                    className="py-4 px-4 text-center"
-                    style={{ color: theme.colors.text.secondary }}
-                  >
-                    {notificaciones.length > 0
-                      ? 'No hay resultados para los filtros aplicados'
-                      : 'No hay notificaciones disponibles'}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
+        </section>
+      </main>
     </div>
   );
 }

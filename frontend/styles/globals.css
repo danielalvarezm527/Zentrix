@@ -131,3 +131,133 @@ body {
   flex-direction: column;
   gap: 10px; 
 }
+
+/* Dashboard */
+
+.dashboard-container {
+  display: flex;
+  min-height: 100vh;
+  background: linear-gradient(120deg, #f6fbff 0%, #e3f4fb 100%);
+}
+
+.dashboard-sidebar {
+  background: linear-gradient(180deg, #29ABE2 0%, #18404b 100%);
+  width: 80px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 0;
+  border-radius: 0 24px 24px 0;
+  box-shadow: 0 8px 32px 0 #29abe233;
+  /*position: relative;*/
+  z-index: 2;
+}
+
+.dashboard-main {
+  flex: 1;
+  padding: 40px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.dashboard-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #18404b;
+  letter-spacing: 1px;
+}
+
+.dashboard-search {
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  padding: 10px 18px;
+  font-size: 16px;
+  outline: none;
+  background: #fff;
+}
+
+.dashboard-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 32px;
+}
+
+.dashboard-card {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px 0 #29abe233;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.dashboard-card.chart {
+  background: linear-gradient(120deg, #29abe2 0%, #b3e0f7 100%);
+  color: #fff;
+}
+
+.dashboard-table-container {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px 0 #29abe233;
+  padding: 24px;
+  margin-top: 24px;
+  overflow-x: auto;
+}
+
+.dashboard-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.dashboard-table th,
+.dashboard-table td {
+  padding: 12px 16px;
+  text-align: left;
+}
+
+.dashboard-table th {
+  background: #29abe2;
+  color: #fff;
+  font-weight: 600;
+}
+
+.dashboard-table tr:nth-child(even) {
+  background: #f6fbff;
+}
+
+.dashboard-btn {
+  padding: 10px 24px;
+  border-radius: 8px;
+  background: #29abe2;
+  color: #fff;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+  box-shadow: 0 2px 8px #29abe233;
+}
+
+.dashboard-btn:hover {
+  background: #1789b6;
+}
+
+@media (max-width: 900px) {
+  .dashboard-main {
+    padding: 24px 8px;
+  }
+  .dashboard-cards {
+    grid-template-columns: 1fr;
+  }
+}
