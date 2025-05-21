@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import theme from '../styles/theme';
+import { Rubik } from 'next/font/google'; 
+
+const rubik = Rubik({ weight: ["700"], subsets: ["latin"] });
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('');
@@ -99,7 +102,7 @@ export default function ResetPassword() {
       <div className="watermark">Zentrix</div>
       <div className="center">
         <div className="loginCard">
-          <h2 className={`subtitle ${rubik.className}`} style={{ marginBottom: 20 }}>
+          <h2 className={`subtitle ${rubik.className}`} style={{ marginBottom: 30, textAlign:'center' }}>
             Establecer Nueva Contraseña
           </h2>
 
@@ -136,7 +139,7 @@ export default function ResetPassword() {
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
-              <div className="mb-4" style={{ marginBottom: 0,display:"flex", flexDirection:"column", alignItems:"center" }}>
+              <div className="mb-4" style={{ marginBottom: 0,display:"flex", flexDirection:"column", alignItems:"left" }}>
                 <label className="block mb-1" style={{ color: theme.colors.text.primary }}>
                   Nueva Contraseña
                 </label>
@@ -151,7 +154,7 @@ export default function ResetPassword() {
                 />
               </div>
 
-              <div className="mb-4">
+              <div className="mb-6">
                 <label className="block mb-1" style={{ color: theme.colors.text.primary }}>
                   Confirmar Contraseña
                 </label>

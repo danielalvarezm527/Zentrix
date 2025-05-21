@@ -59,7 +59,7 @@ export default function UserDashboard() {
     localStorage.removeItem('invoiceAlerts');
 
     async function fetchData() {
-      const f = await fetch(`http://localhost:3000/invoices/${id_user}`);
+      const f = await fetch(`http://localhost:4000/invoices/${id_user}`);
       setFacturas(await f.json());
     }
 
