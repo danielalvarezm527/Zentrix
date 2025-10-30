@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import theme from '../styles/theme';
+import { auth } from '../firebase'
 
 export default function Login() {
   const [email, setEmail] = useState('');
