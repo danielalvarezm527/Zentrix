@@ -1,29 +1,25 @@
-import logo from './logo.svg';
-import './App.css';
-import AddDoc from './components/add_doc';
-import GetDocs from './components/get_docs';
-import GetDoc from './components/get_doc';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import AdminDashboard from './pages/AdminDashboard';
+import UserDashboard from './pages/UserDashboard';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <input placeholder="address" id="address"></input>
-        <input placeholder="company_name" id="company_name"></input>
-        <input placeholder="email" id="email"></input>
-        <input placeholder="nit" id="nit"></input>
-        <button onClick={AddDoc} className='button-input'>Enviara a firebase</button>
-
-        <br></br>
-
-        <button onClick={GetDocs} className='button-input'>Traer de firebase</button>
-
-        <br></br>
-
-        <input placeholder="id documento" id="docId"></input>
-        <button onClick={GetDoc} className='button-input'>Traer de firebase uno especifico</button>
-      </header>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/dashboard/admin" element={<AdminDashboard />} />
+        <Route path="/dashboard/user" element={<UserDashboard />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Router>
   );
 }
 
