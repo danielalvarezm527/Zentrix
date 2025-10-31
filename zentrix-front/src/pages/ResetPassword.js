@@ -1,49 +1,136 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import theme from '../styles/theme';
+import { auth } from '../firebase';
+import { confirmPasswordReset, verifyPasswordResetCode } from 'firebase/auth';
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [token, setToken] = useState('');
+  const [oobCode, setOobCode] = useState('');
   const [message, setMessage] = useState({ text: '', isError: false });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resetComplete, setResetComplete] = useState(false);
+  const [isValidCode, setIsValidCode] = useState(null);
+  const [userEmail, setUserEmail] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    // Get token from URL query parameter
+    // Obtener el código oobCode de la URL (Firebase lo envía como 'oobCode')
     const searchParams = new URLSearchParams(location.search);
-    const tokenParam = searchParams.get('token');
-    if (tokenParam) {
-      setToken(tokenParam);
+    const code = searchParams.get('oobCode');
+
+    if (code) {
+      setOobCode(code);
+      // Verificar que el código sea válido
+      verifyPasswordResetCode(auth, code)
+        .then((email) => {
+          setUserEmail(email);
+          setIsValidCode(true);
+          console.log('Código válido para el email:', email);
+        })
+        .catch((error) => {
+          console.error('Error al verificar código:', error);
+          setIsValidCode(false);
+
+          let errorMessage = 'El enlace de restablecimiento no es válido o ha expirado.';
+          if (error.code === 'auth/expired-action-code') {
+            errorMessage = 'El enlace de restablecimiento ha expirado. Por favor solicita uno nuevo.';
+          } else if (error.code === 'auth/invalid-action-code') {
+            errorMessage = 'El enlace de restablecimiento no es válido o ya fue usado.';
+          }
+
+          setMessage({ text: errorMessage, isError: true });
+        });
+    } else {
+      setIsValidCode(false);
     }
   }, [location]);
 
-  // TODO: Implementar lógica de restablecimiento de contraseña con Firebase
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setMessage({ text: '', isError: false });
 
-    // Validate passwords match
+    // Validar que las contraseñas coincidan
     if (password !== confirmPassword) {
       setMessage({ text: 'Las contraseñas no coinciden', isError: true });
       setIsSubmitting(false);
       return;
     }
 
-    // Lógica de restablecimiento de contraseña con Firebase se implementará aquí
-    setMessage({ text: 'Función de restablecimiento será implementada con Firebase', isError: false });
-    setIsSubmitting(false);
+    // Validar longitud mínima
+    if (password.length < 6) {
+      setMessage({ text: 'La contraseña debe tener al menos 6 caracteres', isError: true });
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      // Confirmar el restablecimiento de contraseña con Firebase
+      await confirmPasswordReset(auth, oobCode, password);
+
+      setResetComplete(true);
+      setMessage({
+        text: '¡Contraseña actualizada exitosamente!',
+        isError: false
+      });
+
+      console.log('Contraseña restablecida para:', userEmail);
+
+      // Redirigir al login después de 3 segundos
+      setTimeout(() => {
+        navigate('/login');
+      }, 3000);
+
+    } catch (error) {
+      console.error('Error al restablecer contraseña:', error);
+
+      let errorMessage = 'Error al restablecer la contraseña. Intenta de nuevo.';
+
+      switch (error.code) {
+        case 'auth/expired-action-code':
+          errorMessage = 'El enlace ha expirado. Por favor solicita uno nuevo.';
+          break;
+        case 'auth/invalid-action-code':
+          errorMessage = 'El enlace no es válido o ya fue usado. Por favor solicita uno nuevo.';
+          break;
+        case 'auth/weak-password':
+          errorMessage = 'La contraseña es muy débil. Debe tener al menos 6 caracteres.';
+          break;
+        default:
+          errorMessage = `Error: ${error.message}`;
+      }
+
+      setMessage({ text: errorMessage, isError: true });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const goToLogin = () => {
     navigate('/login');
   };
 
-  if (!token) {
+  // Mostrar loading mientras se valida el código
+  if (isValidCode === null) {
+    return (
+      <div className="background">
+        <div className="watermark">Zentrix</div>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="loginCard">
+            <p className="text-center" style={{ color: theme.colors.text.primary }}>
+              Verificando enlace de restablecimiento...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Mostrar error si el código no es válido
+  if (isValidCode === false) {
     return (
       <div className="background">
         <div className="watermark">Zentrix</div>
@@ -52,9 +139,19 @@ export default function ResetPassword() {
             <h2 className="text-2xl font-bold mb-6 text-center" style={{ color: theme.colors.text.primary }}>
               Error de Restablecimiento
             </h2>
-            <p className="mb-6 text-center" style={{ color: theme.colors.status.error }}>
-              El token de restablecimiento no es válido o ha expirado.
-            </p>
+
+            {message.text && (
+              <p className="mb-6 text-center" style={{ color: theme.colors.status.error }}>
+                {message.text}
+              </p>
+            )}
+
+            {!message.text && (
+              <p className="mb-6 text-center" style={{ color: theme.colors.status.error }}>
+                El enlace de restablecimiento no es válido o ha expirado.
+              </p>
+            )}
+
             <button
               onClick={goToLogin}
               className="w-full font-bold py-2 px-4 rounded"
@@ -81,6 +178,12 @@ export default function ResetPassword() {
           <h2 className="subtitle" style={{ marginBottom: 30, textAlign: 'center', fontWeight: 700 }}>
             Establecer Nueva Contraseña
           </h2>
+
+          {userEmail && (
+            <p style={{ textAlign: 'center', marginBottom: 20, color: '#7b8a97', fontSize: '14px' }}>
+              Restableciendo contraseña para: <strong>{userEmail}</strong>
+            </p>
+          )}
 
           {message.text && (
             <div

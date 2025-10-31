@@ -2,20 +2,74 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import theme from '../styles/theme';
 import { auth } from '../firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { getUserRole } from '../services/userService';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mensaje, setMensaje] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // TODO: Implementar lógica de autenticación con Firebase
   const handleLogin = async (e) => {
     e.preventDefault();
+    setMensaje('');
+    setLoading(true);
 
-    // Lógica de autenticación con Firebase se implementará aquí
-    setMensaje('Función de login será implementada con Firebase');
+    try {
+      // Autenticación con Firebase
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      console.log('Usuario autenticado:', user.email);
+
+      // Obtener el rol del usuario desde Firestore
+      const userRole = await getUserRole(user.uid);
+      console.log('Rol del usuario:', userRole);
+
+      // Redirigir según el rol del usuario
+      if (userRole === 'Admin') {
+        navigate('/dashboard/admin');
+      } else if (userRole === 'User') {
+        navigate('/dashboard/user');
+      } else {
+        // Si el usuario no tiene rol asignado o es desconocido
+        setMensaje('Usuario sin rol asignado. Contacta al administrador.');
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error('Error de autenticación:', error);
+      setLoading(false);
+
+      // Mensajes de error en español según el código de error
+      let errorMessage = 'Error al iniciar sesión. Intenta de nuevo.';
+
+      switch (error.code) {
+        case 'auth/invalid-email':
+          errorMessage = 'El correo electrónico no es válido.';
+          break;
+        case 'auth/user-disabled':
+          errorMessage = 'Esta cuenta ha sido deshabilitada.';
+          break;
+        case 'auth/user-not-found':
+          errorMessage = 'No existe una cuenta con este correo electrónico.';
+          break;
+        case 'auth/wrong-password':
+          errorMessage = 'Contraseña incorrecta.';
+          break;
+        case 'auth/invalid-credential':
+          errorMessage = 'Credenciales inválidas. Verifica tu correo y contraseña.';
+          break;
+        case 'auth/too-many-requests':
+          errorMessage = 'Demasiados intentos fallidos. Intenta más tarde.';
+          break;
+        default:
+          errorMessage = 'Error al iniciar sesión. Intenta de nuevo.';
+      }
+
+      setMensaje(errorMessage);
+    }
   };
 
   return (
@@ -27,8 +81,8 @@ export default function Login() {
           <form onSubmit={handleLogin} className="formCard">
             <h2 className="loginTitle">Iniciar sesión</h2>
             <input
-              type="text"
-              placeholder="Usuario"
+              type="email"
+              placeholder="Correo electrónico"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="input"
@@ -50,10 +104,16 @@ export default function Login() {
             <button
               type="submit"
               className="button"
-              onMouseOver={(e) => (e.currentTarget.style.backgroundColor = theme.colors.primary.hover)}
-              onMouseOut={(e) => (e.currentTarget.style.backgroundColor = theme.colors.primary.main)}
+              disabled={loading}
+              onMouseOver={(e) => !loading && (e.currentTarget.style.backgroundColor = theme.colors.primary.hover)}
+              onMouseOut={(e) => !loading && (e.currentTarget.style.backgroundColor = theme.colors.primary.main)}
+              style={{
+                backgroundColor: loading ? '#ccc' : theme.colors.primary.main,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.7 : 1
+              }}
             >
-              Entrar
+              {loading ? 'Cargando...' : 'Entrar'}
             </button>
 
             {mensaje && (

@@ -3,5 +3,6 @@ export const COLLECTIONS = {
   ERPCOMPANY: 'Erpcompany',
   INVOICE: 'Invoice',
   NOTIFICATION: 'Notification',
-  ROLE: 'Role'
+  ROLE: 'Role',
+  USERS: 'users'
 };

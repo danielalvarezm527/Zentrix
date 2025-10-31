@@ -7,12 +7,12 @@ import { getFirestore } from "firebase/firestore"; // <-- Importa Firestore
 // Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyDAV-tzHQx20lHqS47OHgG0M4rjdT0Qo_U",
-  authDomain: "zentrix-88a65.firebaseapp.com",
-  projectId: "zentrix-88a65",
-  storageBucket: "zentrix-88a65.firebasestorage.app",
+  authDomain: "zentrix-99a65.firebaseapp.com",
+  projectId: "zentrix-99a65",
+  storageBucket: "zentrix-99a65.firebasestorage.app",
   messagingSenderId: "232754206933",
-  appId: "1:232754206933:web:74e9d5965bd04ff664rr5c",
-  measurementId: "G-J3MLJ8TPTF"
+  appId: "1:232754206933:web:74e9d5965bd04ff664aa5c",
+  measurementId: "G-J8MLJ8TPTF"
 };
 
 // Initialize Firebase

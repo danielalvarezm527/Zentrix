@@ -6,6 +6,11 @@ import * as XLSX from 'xlsx';
 import { FaHome, FaSignOutAlt } from 'react-icons/fa';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement } from 'chart.js';
 import { Pie, Line } from 'react-chartjs-2';
+import { auth, db } from '../firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { getUserById } from '../services/userService';
+import { COLLECTIONS } from '../services/constants';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement);
 
@@ -33,26 +38,102 @@ export default function UserDashboard() {
     datasets: []
   });
 
-   useEffect(() => {
-    const storedEmail = localStorage.getItem('email');
-    if (storedEmail) setUserName(storedEmail);
-  }, []);
-
-  // TODO: Implementar lógica de Firebase para cargar facturas del usuario
+  // Cargar datos del usuario autenticado
   useEffect(() => {
-    const storedAlerts = localStorage.getItem('invoiceAlerts');
-    if (storedAlerts) {
-      try {
-        setAlerts(JSON.parse(storedAlerts));
-      } catch (e) {
-        console.error('Error parsing invoice alerts:', e);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          // Obtener datos del usuario desde Firestore
+          const userData = await getUserById(user.uid);
+          if (userData) {
+            setUserName(`${userData.nombre} ${userData.apellido}`);
+          } else {
+            setUserName(user.email);
+          }
+
+          // Cargar facturas del usuario
+          const invoicesQuery = query(
+            collection(db, COLLECTIONS.INVOICE),
+            where('user_id', '==', user.uid)
+          );
+          const invoicesSnapshot = await getDocs(invoicesQuery);
+          const invoicesData = invoicesSnapshot.docs.map(doc => ({
+            id: doc.id,
+            id_invoice: doc.id,
+            ...doc.data()
+          }));
+          setFacturas(invoicesData);
+          setFilteredFacturas(invoicesData);
+          console.log('Facturas del usuario cargadas:', invoicesData.length);
+
+          // Cargar notificaciones del usuario
+          const notificationsQuery = query(
+            collection(db, COLLECTIONS.NOTIFICATION),
+            where('user_id', '==', user.uid),
+            where('is_read', '==', false)
+          );
+          const notificationsSnapshot = await getDocs(notificationsQuery);
+          const notificationsData = notificationsSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+
+          // Clasificar notificaciones por urgencia
+          const today = new Date();
+          const urgent = [];
+          const normal = [];
+
+          notificationsData.forEach(notification => {
+            // Si tiene invoice_id, es una notificación de factura próxima a vencer
+            if (notification.invoice_id) {
+              // Buscar la factura relacionada
+              const invoice = invoicesData.find(inv => inv.id === notification.invoice_id);
+              if (invoice) {
+                const dueDate = new Date(invoice.due_date);
+                const daysUntilDue = Math.floor((dueDate - today) / (1000 * 60 * 60 * 24));
+
+                const alert = {
+                  message: notification.message,
+                  due_date: invoice.due_date,
+                  invoice_number: invoice.invoice_number
+                };
+
+                if (daysUntilDue <= 3) {
+                  urgent.push(alert);
+                } else {
+                  normal.push(alert);
+                }
+              }
+            } else {
+              // Notificación genérica
+              if (notification.type === 'alerta') {
+                urgent.push({
+                  message: notification.message,
+                  due_date: notification.sent_date
+                });
+              } else {
+                normal.push({
+                  message: notification.message,
+                  due_date: notification.sent_date
+                });
+              }
+            }
+          });
+
+          setAlerts({ urgent, normal });
+          console.log('Alertas cargadas - Urgentes:', urgent.length, 'Normales:', normal.length);
+
+        } catch (error) {
+          console.error('Error al cargar datos del usuario:', error);
+        }
+      } else {
+        // Si no hay usuario autenticado, redirigir al login
+        navigate('/login');
       }
-    }
+    });
 
-    localStorage.removeItem('invoiceAlerts');
-
-    // Lógica de carga de facturas desde Firebase se implementará aquí
-  }, []);
+    return () => unsubscribe();
+  }, [navigate]);
 
   useEffect(() => {
     if (facturas.length > 0) {
@@ -191,13 +272,18 @@ export default function UserDashboard() {
     });
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('rol');
-    localStorage.removeItem('id_user');
-    localStorage.removeItem('invoiceAlerts');
-
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      localStorage.removeItem('token');
+      localStorage.removeItem('rol');
+      localStorage.removeItem('id_user');
+      localStorage.removeItem('invoiceAlerts');
+      console.log('Sesión cerrada exitosamente');
+      navigate('/login');
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
   };
 
   const exportPDF = () => {

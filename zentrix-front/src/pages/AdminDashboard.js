@@ -3,12 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import theme from '../styles/theme';
 import { jsPDF } from 'jspdf';
 import * as XLSX from 'xlsx';
-import { FaHome, FaBell, FaUserPlus, FaSignOutAlt } from 'react-icons/fa';
+import { FaHome, FaBell, FaUserPlus, FaSignOutAlt, FaSeedling } from 'react-icons/fa';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement } from 'chart.js';
 import { Pie, Bar } from 'react-chartjs-2';
 import { auth, db } from '../firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, deleteUser, signOut } from 'firebase/auth';
+import { doc, setDoc, query, where, collection, getDocs } from 'firebase/firestore';
+import { saveUserData } from '../services/userService';
+import { COLLECTIONS } from '../services/constants';
+import { seedAllData } from '../utils/seedData';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement);
 
@@ -42,6 +45,9 @@ export default function AdminDashboard() {
     rol: 'User'
   });
   const [registerMessage, setRegisterMessage] = useState({ text: '', isError: false });
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
+  const [seedMessage, setSeedMessage] = useState({ text: '', isError: false });
 
   const navigate = useNavigate();
 
@@ -55,9 +61,54 @@ export default function AdminDashboard() {
     datasets: []
   });
 
-  // TODO: Implementar lógica de Firebase para cargar facturas y notificaciones
+  // Cargar facturas y notificaciones desde Firebase
   useEffect(() => {
-    // Lógica de carga desde Firebase se implementará aquí
+    const loadData = async () => {
+      try {
+        // Cargar todos los usuarios primero para hacer el mapping
+        const usersSnapshot = await getDocs(collection(db, COLLECTIONS.USERS));
+        const usersMap = {};
+        usersSnapshot.docs.forEach(doc => {
+          const userData = doc.data();
+          usersMap[doc.id] = `${userData.nombre} ${userData.apellido}`;
+        });
+        console.log('Usuarios cargados:', Object.keys(usersMap).length);
+
+        // Cargar facturas y agregar el nombre del usuario
+        const invoicesSnapshot = await getDocs(collection(db, COLLECTIONS.INVOICE));
+        const invoicesData = invoicesSnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            id_invoice: doc.id,
+            ...data,
+            user_name: usersMap[data.user_id] || 'Usuario desconocido'
+          };
+        });
+        setFacturas(invoicesData);
+        setFilteredFacturas(invoicesData);
+        console.log('Facturas cargadas:', invoicesData.length);
+
+        // Cargar notificaciones y agregar el nombre del usuario
+        const notificationsSnapshot = await getDocs(collection(db, COLLECTIONS.NOTIFICATION));
+        const notificationsData = notificationsSnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            id_notification: doc.id,
+            ...data,
+            user_name: usersMap[data.user_id] || 'Usuario desconocido'
+          };
+        });
+        setNotificaciones(notificationsData);
+        setFilteredNotificaciones(notificationsData);
+        console.log('Notificaciones cargadas:', notificationsData.length);
+      } catch (error) {
+        console.error('Error al cargar datos:', error);
+      }
+    };
+
+    loadData();
   }, []);
 
   useEffect(() => {
@@ -200,10 +251,38 @@ export default function AdminDashboard() {
 
   const handleRegister = async e => {
     e.preventDefault();
+    setIsRegistering(true);
+    setRegisterMessage({ text: '', isError: false });
 
     let userCredential = null;
 
     try {
+      // Validar que el username no esté duplicado
+      const usernameQuery = query(
+        collection(db, COLLECTIONS.USERS),
+        where('username', '==', registerData.username)
+      );
+      const usernameSnapshot = await getDocs(usernameQuery);
+
+      if (!usernameSnapshot.empty) {
+        setRegisterMessage({ text: 'El nombre de usuario ya está en uso', isError: true });
+        setIsRegistering(false);
+        return;
+      }
+
+      // Validar que el documento no esté duplicado
+      const documentoQuery = query(
+        collection(db, COLLECTIONS.USERS),
+        where('documento', '==', registerData.documento)
+      );
+      const documentoSnapshot = await getDocs(documentoQuery);
+
+      if (!documentoSnapshot.empty) {
+        setRegisterMessage({ text: 'El número de documento ya está registrado', isError: true });
+        setIsRegistering(false);
+        return;
+      }
+
       // Crear usuario en Firebase Authentication
       userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -215,7 +294,7 @@ export default function AdminDashboard() {
       console.log('Usuario registrado en Firebase Auth:', user.uid);
 
       try {
-        // Guardar datos adicionales del usuario en Firestore
+        // Guardar datos adicionales del usuario en Firestore usando el servicio
         const userData = {
           email: registerData.email,
           nombre: registerData.nombre,
@@ -228,7 +307,7 @@ export default function AdminDashboard() {
         };
 
         console.log('Intentando guardar en Firestore:', userData);
-        await setDoc(doc(db, 'users', user.uid), userData);
+        await saveUserData(user.uid, userData);
         console.log('Datos guardados exitosamente en Firestore');
 
         setRegisterMessage({ text: 'Usuario registrado exitosamente', isError: false });
@@ -243,6 +322,8 @@ export default function AdminDashboard() {
           rol: 'User'
         });
 
+        setIsRegistering(false);
+
         setTimeout(() => {
           setRegisterMessage({ text: '', isError: false });
           setShowRegisterForm(false);
@@ -250,14 +331,30 @@ export default function AdminDashboard() {
 
       } catch (firestoreError) {
         console.error('Error al guardar en Firestore:', firestoreError);
-        setRegisterMessage({
-          text: 'Usuario creado pero error al guardar datos adicionales. Verifica las reglas de Firestore.',
-          isError: true
-        });
+
+        // ROLLBACK: Eliminar usuario de Firebase Auth si falla Firestore
+        try {
+          console.log('Ejecutando rollback: eliminando usuario de Firebase Auth...');
+          await deleteUser(user);
+          console.log('Usuario eliminado de Firebase Auth exitosamente');
+          setRegisterMessage({
+            text: 'Error al guardar datos del usuario. El registro ha sido cancelado. Verifica las reglas de Firestore.',
+            isError: true
+          });
+        } catch (deleteError) {
+          console.error('Error al eliminar usuario durante rollback:', deleteError);
+          setRegisterMessage({
+            text: 'Error crítico: Usuario creado en Auth pero sin datos en Firestore. Contacta al administrador del sistema.',
+            isError: true
+          });
+        }
+
+        setIsRegistering(false);
       }
 
     } catch (error) {
       console.error('Error al registrar usuario:', error);
+      setIsRegistering(false);
       let errorMessage = 'Error al registrar usuario';
 
       // Mensajes de error específicos de Firebase Auth
@@ -272,6 +369,38 @@ export default function AdminDashboard() {
       }
 
       setRegisterMessage({ text: errorMessage, isError: true });
+    }
+  };
+
+  const handleSeedData = async () => {
+    if (!window.confirm('¿Estás seguro de que deseas generar datos de prueba? Esto creará empresas, facturas y notificaciones dummy.')) {
+      return;
+    }
+
+    setIsSeeding(true);
+    setSeedMessage({ text: '', isError: false });
+
+    try {
+      const results = await seedAllData();
+
+      setSeedMessage({
+        text: `✅ Datos generados: ${results.companies.length} empresas, ${results.invoices.length} facturas, ${results.notifications.length} notificaciones`,
+        isError: false
+      });
+
+      // Recargar la página después de 3 segundos para mostrar los nuevos datos
+      setTimeout(() => {
+        window.location.reload();
+      }, 3000);
+
+    } catch (error) {
+      console.error('Error al generar datos:', error);
+      setSeedMessage({
+        text: `❌ Error al generar datos: ${error.message}`,
+        isError: true
+      });
+    } finally {
+      setIsSeeding(false);
     }
   };
 
@@ -418,12 +547,17 @@ export default function AdminDashboard() {
     XLSX.writeFile(workbook, 'notificaciones.xlsx');
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('rol');
-    localStorage.removeItem('id_user');
-
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      localStorage.removeItem('token');
+      localStorage.removeItem('rol');
+      localStorage.removeItem('id_user');
+      console.log('Sesión cerrada exitosamente');
+      navigate('/login');
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
   };
 
   return (
@@ -452,6 +586,15 @@ export default function AdminDashboard() {
           >
             <FaUserPlus size={26} color="#fff" />
           </button>
+          <button
+            className="hover:bg-white/10 p-3 rounded-lg transition"
+            title="Generar datos de prueba"
+            onClick={handleSeedData}
+            disabled={isSeeding}
+            style={{ opacity: isSeeding ? 0.5 : 1 }}
+          >
+            <FaSeedling size={26} color="#fff" />
+          </button>
         </div>
         <button
           className="hover:bg-white/10 p-3 rounded-lg transition"
@@ -465,6 +608,21 @@ export default function AdminDashboard() {
         <div className="dashboard-header">
           <h1 className="dashboard-title">Dashboard Admin</h1>
         </div>
+
+        {seedMessage.text && (
+          <div
+            className="mb-4 p-3 rounded text-center"
+            style={{
+              backgroundColor: seedMessage.isError
+                ? theme.colors.status.error
+                : theme.colors.status.success,
+              color: theme.colors.text.white,
+              marginBottom: 16
+            }}
+          >
+            {seedMessage.text}
+          </div>
+        )}
 
         {showRegisterForm && (
           <div className="dashboard-card" style={{ marginBottom: 32 }}>
@@ -498,6 +656,7 @@ export default function AdminDashboard() {
                   onChange={handleInputChange}
                   className="w-full p-2 border rounded"
                   style={{ borderColor: theme.colors.border.main }}
+                  disabled={isRegistering}
                   required
                 />
               </div>
@@ -513,6 +672,7 @@ export default function AdminDashboard() {
                   onChange={handleInputChange}
                   className="w-full p-2 border rounded"
                   style={{ borderColor: theme.colors.border.main }}
+                  disabled={isRegistering}
                   required
                 />
               </div>
@@ -528,6 +688,7 @@ export default function AdminDashboard() {
                   onChange={handleInputChange}
                   className="w-full p-2 border rounded"
                   style={{ borderColor: theme.colors.border.main }}
+                  disabled={isRegistering}
                   required
                 />
               </div>
@@ -543,6 +704,7 @@ export default function AdminDashboard() {
                   onChange={handleInputChange}
                   className="w-full p-2 border rounded"
                   style={{ borderColor: theme.colors.border.main }}
+                  disabled={isRegistering}
                   required
                 />
               </div>
@@ -558,6 +720,7 @@ export default function AdminDashboard() {
                   onChange={handleInputChange}
                   className="w-full p-2 border rounded"
                   style={{ borderColor: theme.colors.border.main }}
+                  disabled={isRegistering}
                   required
                 />
               </div>
@@ -573,6 +736,7 @@ export default function AdminDashboard() {
                   onChange={handleInputChange}
                   className="w-full p-2 border rounded"
                   style={{ borderColor: theme.colors.border.main }}
+                  disabled={isRegistering}
                   required
                 />
               </div>
@@ -588,6 +752,7 @@ export default function AdminDashboard() {
                   onChange={handleInputChange}
                   className="w-full p-2 border rounded"
                   style={{ borderColor: theme.colors.border.main }}
+                  disabled={isRegistering}
                   required
                 />
               </div>
@@ -602,6 +767,7 @@ export default function AdminDashboard() {
                   onChange={handleInputChange}
                   className="w-full p-2 border rounded"
                   style={{ borderColor: theme.colors.border.main }}
+                  disabled={isRegistering}
                   required
                 >
                   <option value="User">Usuario</option>
@@ -619,20 +785,24 @@ export default function AdminDashboard() {
                     border: `1px solid ${theme.colors.border.main}`
                   }}
                   onClick={() => setShowRegisterForm(false)}
+                  disabled={isRegistering}
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 rounded font-medium"
+                  disabled={isRegistering}
                   style={{
-                    backgroundColor: theme.colors.secondary.main,
-                    color: theme.colors.secondary.contrast
+                    backgroundColor: isRegistering ? '#ccc' : theme.colors.secondary.main,
+                    color: theme.colors.secondary.contrast,
+                    cursor: isRegistering ? 'not-allowed' : 'pointer',
+                    opacity: isRegistering ? 0.7 : 1
                   }}
-                  onMouseOver={e => (e.currentTarget.style.backgroundColor = theme.colors.secondary.hover)}
-                  onMouseOut={e => (e.currentTarget.style.backgroundColor = theme.colors.secondary.main)}
+                  onMouseOver={e => !isRegistering && (e.currentTarget.style.backgroundColor = theme.colors.secondary.hover)}
+                  onMouseOut={e => !isRegistering && (e.currentTarget.style.backgroundColor = theme.colors.secondary.main)}
                 >
-                  Registrar
+                  {isRegistering ? 'Registrando...' : 'Registrar'}
                 </button>
               </div>
             </form>
