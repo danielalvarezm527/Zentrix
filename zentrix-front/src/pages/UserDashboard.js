@@ -38,9 +38,8 @@ export default function UserDashboard() {
     if (storedEmail) setUserName(storedEmail);
   }, []);
 
+  // TODO: Implementar lógica de Firebase para cargar facturas del usuario
   useEffect(() => {
-    const id_user = localStorage.getItem('id_user');
-
     const storedAlerts = localStorage.getItem('invoiceAlerts');
     if (storedAlerts) {
       try {
@@ -52,12 +51,7 @@ export default function UserDashboard() {
 
     localStorage.removeItem('invoiceAlerts');
 
-    async function fetchData() {
-      const f = await fetch(`http://localhost:4000/invoices/${id_user}`);
-      setFacturas(await f.json());
-    }
-
-    fetchData();
+    // Lógica de carga de facturas desde Firebase se implementará aquí
   }, []);
 
   useEffect(() => {

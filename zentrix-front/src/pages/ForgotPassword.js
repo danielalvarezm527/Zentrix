@@ -9,40 +9,15 @@ export default function ForgotPassword() {
   const [resetToken, setResetToken] = useState(null);
   const navigate = useNavigate();
 
+  // TODO: Implementar lógica de solicitud de restablecimiento de contraseña con Firebase
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setMessage({ text: '', isError: false });
 
-    try {
-      const res = await fetch('http://localhost:4000/request-reset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        setMessage({
-          text: data.message,
-          isError: false
-        });
-        setResetToken(data.token);
-      } else {
-        setMessage({
-          text: data.message || 'Error al solicitar el restablecimiento de contraseña',
-          isError: true
-        });
-      }
-    } catch (error) {
-      setMessage({
-        text: 'Error de conexión con el servidor',
-        isError: true
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    // Lógica de solicitud de restablecimiento con Firebase se implementará aquí
+    setMessage({ text: 'Función de solicitud de restablecimiento será implementada con Firebase', isError: false });
+    setIsSubmitting(false);
   };
 
   const handleReset = () => {

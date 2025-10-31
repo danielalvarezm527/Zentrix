@@ -21,6 +21,7 @@ export default function ResetPassword() {
     }
   }, [location]);
 
+  // TODO: Implementar lógica de restablecimiento de contraseña con Firebase
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -33,34 +34,9 @@ export default function ResetPassword() {
       return;
     }
 
-    try {
-      const res = await fetch('http://localhost:4000/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, newPassword: password }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        setMessage({ text: data.message, isError: false });
-        setResetComplete(true);
-        setPassword('');
-        setConfirmPassword('');
-      } else {
-        setMessage({
-          text: data.message || 'Error al restablecer la contraseña',
-          isError: true
-        });
-      }
-    } catch (error) {
-      setMessage({
-        text: 'Error de conexión con el servidor',
-        isError: true
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    // Lógica de restablecimiento de contraseña con Firebase se implementará aquí
+    setMessage({ text: 'Función de restablecimiento será implementada con Firebase', isError: false });
+    setIsSubmitting(false);
   };
 
   const goToLogin = () => {

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import theme from '../styles/theme';
-import { auth } from '../firebase'
+import { auth } from '../firebase';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -9,53 +10,12 @@ export default function Login() {
   const [mensaje, setMensaje] = useState('');
   const navigate = useNavigate();
 
+  // TODO: Implementar lógica de autenticación con Firebase
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    try {
-      const res = await fetch('http://localhost:4000/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: email, password }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        // Store user data in localStorage
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('rol', data.rol);
-        localStorage.setItem('id_user', data.id_user);
-        localStorage.setItem('email', email);
-
-        // Check for invoice alerts if the user is not an admin
-        if (data.rol !== 'Admin') {
-          try {
-            const alertsRes = await fetch(`http://localhost:4000/invoice-alerts/${data.id_user}`);
-            if (alertsRes.ok) {
-              const alertsData = await alertsRes.json();
-              // Store alerts in localStorage
-              localStorage.setItem('invoiceAlerts', JSON.stringify(alertsData));
-            }
-          } catch (error) {
-            console.error('Error fetching invoice alerts:', error);
-          }
-        }
-
-        // Redirigir según el rol
-        if (data.rol === 'Admin') {
-          navigate('/dashboard/admin');
-        } else if (data.rol === 'User') {
-          navigate('/dashboard/user');
-        } else {
-          navigate('/dashboard');
-        }
-      } else {
-        setMensaje(data.message || 'Error al iniciar sesión');
-      }
-    } catch (error) {
-      setMensaje('Error de red o servidor no disponible');
-    }
+    // Lógica de autenticación con Firebase se implementará aquí
+    setMensaje('Función de login será implementada con Firebase');
   };
 
   return (

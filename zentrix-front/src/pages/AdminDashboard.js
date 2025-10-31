@@ -6,6 +6,9 @@ import * as XLSX from 'xlsx';
 import { FaHome, FaBell, FaUserPlus, FaSignOutAlt } from 'react-icons/fa';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement } from 'chart.js';
 import { Pie, Bar } from 'react-chartjs-2';
+import { auth, db } from '../firebase';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement);
 
@@ -52,28 +55,9 @@ export default function AdminDashboard() {
     datasets: []
   });
 
+  // TODO: Implementar lógica de Firebase para cargar facturas y notificaciones
   useEffect(() => {
-    async function fetchData() {
-      try {
-        const fResponse = await fetch('http://localhost:4000/admin/invoices');
-        const nResponse = await fetch('http://localhost:4000/admin/notifications');
-
-        if (fResponse.ok && nResponse.ok) {
-          setFacturas(await fResponse.json());
-          setNotificaciones(await nResponse.json());
-        } else {
-          console.error(
-            'Error fetching data:',
-            fResponse.ok ? '' : 'Invoices fetch failed',
-            nResponse.ok ? '' : 'Notifications fetch failed'
-          );
-        }
-      } catch (error) {
-        console.error('Error fetching admin data:', error);
-      }
-    }
-
-    fetchData();
+    // Lógica de carga desde Firebase se implementará aquí
   }, []);
 
   useEffect(() => {
@@ -217,16 +201,36 @@ export default function AdminDashboard() {
   const handleRegister = async e => {
     e.preventDefault();
 
+    let userCredential = null;
+
     try {
-      const res = await fetch('http://localhost:4000/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(registerData)
-      });
+      // Crear usuario en Firebase Authentication
+      userCredential = await createUserWithEmailAndPassword(
+        auth,
+        registerData.email,
+        registerData.password
+      );
 
-      const data = await res.json();
+      const user = userCredential.user;
+      console.log('Usuario registrado en Firebase Auth:', user.uid);
 
-      if (res.ok) {
+      try {
+        // Guardar datos adicionales del usuario en Firestore
+        const userData = {
+          email: registerData.email,
+          nombre: registerData.nombre,
+          apellido: registerData.apellido,
+          documento: registerData.documento,
+          celular: registerData.celular,
+          username: registerData.username,
+          rol: registerData.rol,
+          createdAt: new Date().toISOString()
+        };
+
+        console.log('Intentando guardar en Firestore:', userData);
+        await setDoc(doc(db, 'users', user.uid), userData);
+        console.log('Datos guardados exitosamente en Firestore');
+
         setRegisterMessage({ text: 'Usuario registrado exitosamente', isError: false });
         setRegisterData({
           email: '',
@@ -243,12 +247,31 @@ export default function AdminDashboard() {
           setRegisterMessage({ text: '', isError: false });
           setShowRegisterForm(false);
         }, 3000);
-      } else {
-        setRegisterMessage({ text: data.message || 'Error al registrar usuario', isError: true });
+
+      } catch (firestoreError) {
+        console.error('Error al guardar en Firestore:', firestoreError);
+        setRegisterMessage({
+          text: 'Usuario creado pero error al guardar datos adicionales. Verifica las reglas de Firestore.',
+          isError: true
+        });
       }
+
     } catch (error) {
-      console.error('Error registering user:', error);
-      setRegisterMessage({ text: 'Error de conexión', isError: true });
+      console.error('Error al registrar usuario:', error);
+      let errorMessage = 'Error al registrar usuario';
+
+      // Mensajes de error específicos de Firebase Auth
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'El email ya está en uso';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'La contraseña debe tener al menos 6 caracteres';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Email inválido';
+      } else {
+        errorMessage = `Error: ${error.message}`;
+      }
+
+      setRegisterMessage({ text: errorMessage, isError: true });
     }
   };
 
