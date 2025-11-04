@@ -1,20 +1,19 @@
 import { useState } from 'react';
-import { useRouter } from 'next/router';
-import Link from 'next/link';
+import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom'; 
 import theme from '../styles/theme';
-import { Rubik } from 'next/font/google';
-
-const rubik = Rubik({ weight: ["700"], subsets: ["latin"] });
+import '@fontsource/rubik/700.css'; 
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mensaje, setMensaje] = useState('');
-  const router = useRouter();
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
+  const navigate = useNavigate();
+    
     try {
       const res = await fetch('http://localhost:4000/login', {
         method: 'POST',
@@ -47,9 +46,9 @@ export default function Login() {
 
         // Redirigir según el rol
         if (data.rol === 'Admin') {
-          router.push('/dashboard/admin');
+          navigate('/dashboard/admin');
         } else if (data.rol === 'User') {
-          router.push('/dashboard/user');
+          navigate('/dashboard/admin');
         } else {
           router.push('/dashboard'); // Default
         }
@@ -57,7 +56,7 @@ export default function Login() {
         setMensaje(data.message || 'Error al iniciar sesión');
       }
     } catch (error) {
-      setMensaje('Error de red o servidor no disponible');
+      setMensaje('Error de red o servidor no disponible'); 
     }
   };
 

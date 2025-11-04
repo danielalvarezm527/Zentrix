@@ -1,17 +1,15 @@
 import { useState } from 'react';
-import { useRouter } from 'next/router';
-import Link from 'next/link';
+import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom'; 
 import theme from '../styles/theme';
-import { Rubik } from 'next/font/google'; 
-
-const rubik = Rubik({ weight: ["700"], subsets: ["latin"] });
+import '@fontsource/rubik/700.css';  
 
 export default function ForgotPassword() {
   const [username, setUsername] = useState('');
   const [message, setMessage] = useState({ text: '', isError: false });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resetToken, setResetToken] = useState(null);
-  const router = useRouter();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -53,7 +51,7 @@ export default function ForgotPassword() {
 
   const handleReset = () => {
     if (resetToken) {
-      router.push(`/reset-password?token=${resetToken}`);
+      navigate(`/reset-password?token=${resetToken}`);
     }
   };
 

@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
-import Link from 'next/link';
+import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom'; 
 import theme from '../styles/theme';
-import { Rubik } from 'next/font/google'; 
-
-const rubik = Rubik({ weight: ["700"], subsets: ["latin"] });
+import '@fontsource/rubik/700.css';  
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('');
@@ -13,7 +11,7 @@ export default function ResetPassword() {
   const [message, setMessage] = useState({ text: '', isError: false });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resetComplete, setResetComplete] = useState(false);
-  const router = useRouter();
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Get token from URL query parameter
@@ -66,7 +64,7 @@ export default function ResetPassword() {
   };
 
   const goToLogin = () => {
-    router.push('/login');
+    navigate('/login');
   };
 
   if (!token) {

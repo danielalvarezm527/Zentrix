@@ -1,6 +1,6 @@
 // frontend/pages/dashboard/admin.js
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
+import { useNavigate } from 'react-router-dom';
 import theme from '../../styles/theme';
 import { jsPDF } from 'jspdf';
 import * as XLSX from 'xlsx';
@@ -43,7 +43,7 @@ export default function AdminDashboard() {
   });
   const [registerMessage, setRegisterMessage] = useState({ text: '', isError: false });
 
-  const router = useRouter();
+  const navigate = useNavigate();
 
   // Chart data states
   const [invoiceStatusChartData, setInvoiceStatusChartData] = useState({
