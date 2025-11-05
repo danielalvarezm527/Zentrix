@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import theme from '../styles/theme';
 import { jsPDF } from 'jspdf';
 import * as XLSX from 'xlsx';
-import { FaHome, FaBell, FaUserPlus, FaSignOutAlt, FaSeedling } from 'react-icons/fa';
+import { FaHome, FaBell, FaUserPlus, FaSignOutAlt, FaSeedling, FaUsers } from 'react-icons/fa';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement } from 'chart.js';
 import { Pie, Bar } from 'react-chartjs-2';
 import { auth, db } from '../firebase';
 import { createUserWithEmailAndPassword, deleteUser, signOut } from 'firebase/auth';
 import { doc, setDoc, query, where, collection, getDocs } from 'firebase/firestore';
-import { saveUserData } from '../services/userService';
+import { saveUserData, getAllUsers, updateUser, toggleUserStatus } from '../services/userService';
 import { COLLECTIONS } from '../services/constants';
 import { seedAllData } from '../utils/seedData';
 
@@ -49,6 +49,14 @@ export default function AdminDashboard() {
   const [isSeeding, setIsSeeding] = useState(false);
   const [seedMessage, setSeedMessage] = useState({ text: '', isError: false });
 
+  // Estados para gestión de usuarios
+  const [showUserManagement, setShowUserManagement] = useState(false);
+  const [usuarios, setUsuarios] = useState([]);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editUserData, setEditUserData] = useState(null);
+  const [editMessage, setEditMessage] = useState({ text: '', isError: false });
+  const [isEditing, setIsEditing] = useState(false);
+
   const navigate = useNavigate();
 
   const [invoiceStatusChartData, setInvoiceStatusChartData] = useState({
@@ -60,6 +68,13 @@ export default function AdminDashboard() {
     labels: [],
     datasets: []
   });
+
+  // Cargar usuarios cuando se active la gestión de usuarios
+  useEffect(() => {
+    if (showUserManagement) {
+      loadUsers();
+    }
+  }, [showUserManagement]);
 
   // Cargar facturas y notificaciones desde Firebase
   useEffect(() => {
@@ -303,6 +318,7 @@ export default function AdminDashboard() {
           celular: registerData.celular,
           username: registerData.username,
           rol: registerData.rol,
+          isActive: true, // Usuario activo por defecto
           createdAt: new Date().toISOString()
         };
 
@@ -401,6 +417,97 @@ export default function AdminDashboard() {
       });
     } finally {
       setIsSeeding(false);
+    }
+  };
+
+  // Funciones de gestión de usuarios
+  const loadUsers = async () => {
+    try {
+      const allUsers = await getAllUsers();
+      setUsuarios(allUsers);
+      console.log('Usuarios cargados:', allUsers.length);
+    } catch (error) {
+      console.error('Error al cargar usuarios:', error);
+    }
+  };
+
+  const handleEditUser = (user) => {
+    setEditUserData({
+      id: user.id,
+      nombre: user.nombre,
+      apellido: user.apellido,
+      email: user.email,
+      documento: user.documento,
+      celular: user.celular,
+      username: user.username,
+      rol: user.rol
+    });
+    setShowEditForm(true);
+    setEditMessage({ text: '', isError: false });
+  };
+
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditUserData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleUpdateUser = async (e) => {
+    e.preventDefault();
+    setIsEditing(true);
+    setEditMessage({ text: '', isError: false });
+
+    try {
+      const { id, ...dataToUpdate } = editUserData;
+      await updateUser(id, dataToUpdate);
+
+      setEditMessage({ text: 'Usuario actualizado exitosamente', isError: false });
+
+      // Recargar la lista de usuarios
+      await loadUsers();
+
+      setTimeout(() => {
+        setShowEditForm(false);
+        setEditUserData(null);
+        setEditMessage({ text: '', isError: false });
+      }, 2000);
+    } catch (error) {
+      console.error('Error al actualizar usuario:', error);
+      setEditMessage({ text: 'Error al actualizar usuario', isError: true });
+    } finally {
+      setIsEditing(false);
+    }
+  };
+
+  const handleToggleStatus = async (uid, currentStatus) => {
+    const newStatus = !currentStatus;
+    const action = newStatus ? 'habilitar' : 'inhabilitar';
+
+    if (!window.confirm(`¿Estás seguro de que deseas ${action} este usuario?`)) {
+      return;
+    }
+
+    try {
+      await toggleUserStatus(uid, newStatus);
+      setEditMessage({
+        text: `Usuario ${newStatus ? 'habilitado' : 'inhabilitado'} exitosamente`,
+        isError: false
+      });
+
+      // Recargar la lista de usuarios
+      await loadUsers();
+
+      setTimeout(() => {
+        setEditMessage({ text: '', isError: false });
+      }, 3000);
+    } catch (error) {
+      console.error('Error al cambiar estado del usuario:', error);
+      setEditMessage({
+        text: 'Error al cambiar estado del usuario',
+        isError: true
+      });
     }
   };
 
@@ -585,6 +692,16 @@ export default function AdminDashboard() {
             onClick={() => setShowRegisterForm(!showRegisterForm)}
           >
             <FaUserPlus size={26} color="#fff" />
+          </button>
+          <button
+            className="hover:bg-white/10 p-3 rounded-lg transition"
+            title="Gestionar usuarios"
+            onClick={() => {
+              setShowUserManagement(!showUserManagement);
+              setShowRegisterForm(false);
+            }}
+          >
+            <FaUsers size={26} color="#fff" />
           </button>
           <button
             className="hover:bg-white/10 p-3 rounded-lg transition"
@@ -806,6 +923,283 @@ export default function AdminDashboard() {
                 </button>
               </div>
             </form>
+          </div>
+        )}
+
+        {showUserManagement && (
+          <div className="dashboard-card" style={{ marginBottom: 32 }}>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold" style={{ color: theme.colors.text.primary }}>
+                Gestión de Usuarios
+              </h2>
+            </div>
+
+            {editMessage.text && (
+              <div
+                className="mb-4 p-3 rounded text-center"
+                style={{
+                  backgroundColor: editMessage.isError
+                    ? theme.colors.status.error
+                    : theme.colors.status.success,
+                  color: theme.colors.text.white
+                }}
+              >
+                {editMessage.text}
+              </div>
+            )}
+
+            {showEditForm && editUserData ? (
+              <div className="mb-6 p-4 border rounded" style={{ borderColor: theme.colors.border.main }}>
+                <h3 className="text-lg font-semibold mb-4" style={{ color: theme.colors.text.primary }}>
+                  Editar Usuario
+                </h3>
+                <form onSubmit={handleUpdateUser} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block mb-1" style={{ color: theme.colors.text.primary }}>
+                      Nombre
+                    </label>
+                    <input
+                      type="text"
+                      name="nombre"
+                      value={editUserData.nombre}
+                      onChange={handleEditInputChange}
+                      className="w-full p-2 border rounded"
+                      style={{ borderColor: theme.colors.border.main }}
+                      disabled={isEditing}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block mb-1" style={{ color: theme.colors.text.primary }}>
+                      Apellido
+                    </label>
+                    <input
+                      type="text"
+                      name="apellido"
+                      value={editUserData.apellido}
+                      onChange={handleEditInputChange}
+                      className="w-full p-2 border rounded"
+                      style={{ borderColor: theme.colors.border.main }}
+                      disabled={isEditing}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block mb-1" style={{ color: theme.colors.text.primary }}>
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={editUserData.email}
+                      onChange={handleEditInputChange}
+                      className="w-full p-2 border rounded"
+                      style={{ borderColor: theme.colors.border.main }}
+                      disabled={isEditing}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block mb-1" style={{ color: theme.colors.text.primary }}>
+                      Nombre de Usuario
+                    </label>
+                    <input
+                      type="text"
+                      name="username"
+                      value={editUserData.username}
+                      onChange={handleEditInputChange}
+                      className="w-full p-2 border rounded"
+                      style={{ borderColor: theme.colors.border.main }}
+                      disabled={isEditing}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block mb-1" style={{ color: theme.colors.text.primary }}>
+                      Documento
+                    </label>
+                    <input
+                      type="text"
+                      name="documento"
+                      value={editUserData.documento}
+                      onChange={handleEditInputChange}
+                      className="w-full p-2 border rounded"
+                      style={{ borderColor: theme.colors.border.main }}
+                      disabled={isEditing}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block mb-1" style={{ color: theme.colors.text.primary }}>
+                      Celular
+                    </label>
+                    <input
+                      type="text"
+                      name="celular"
+                      value={editUserData.celular}
+                      onChange={handleEditInputChange}
+                      className="w-full p-2 border rounded"
+                      style={{ borderColor: theme.colors.border.main }}
+                      disabled={isEditing}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block mb-1" style={{ color: theme.colors.text.primary }}>
+                      Rol
+                    </label>
+                    <select
+                      name="rol"
+                      value={editUserData.rol}
+                      onChange={handleEditInputChange}
+                      className="w-full p-2 border rounded"
+                      style={{ borderColor: theme.colors.border.main }}
+                      disabled={isEditing}
+                      required
+                    >
+                      <option value="User">Usuario</option>
+                      <option value="Admin">Administrador</option>
+                    </select>
+                  </div>
+
+                  <div className="md:col-span-2 mt-4 flex justify-end space-x-4">
+                    <button
+                      type="button"
+                      className="px-4 py-2 rounded font-medium"
+                      style={{
+                        backgroundColor: theme.colors.background.default,
+                        color: theme.colors.text.primary,
+                        border: `1px solid ${theme.colors.border.main}`
+                      }}
+                      onClick={() => {
+                        setShowEditForm(false);
+                        setEditUserData(null);
+                      }}
+                      disabled={isEditing}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 rounded font-medium"
+                      disabled={isEditing}
+                      style={{
+                        backgroundColor: isEditing ? '#ccc' : theme.colors.secondary.main,
+                        color: theme.colors.secondary.contrast,
+                        cursor: isEditing ? 'not-allowed' : 'pointer',
+                        opacity: isEditing ? 0.7 : 1
+                      }}
+                      onMouseOver={e => !isEditing && (e.currentTarget.style.backgroundColor = theme.colors.secondary.hover)}
+                      onMouseOut={e => !isEditing && (e.currentTarget.style.backgroundColor = theme.colors.secondary.main)}
+                    >
+                      {isEditing ? 'Guardando...' : 'Guardar Cambios'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            ) : null}
+
+            <div className="dashboard-table-container">
+              <table className="dashboard-table">
+                <thead>
+                  <tr style={{ backgroundColor: theme.colors.background.sidebar, color: theme.colors.text.white }}>
+                    <th className="py-3 px-4 text-left">Nombre</th>
+                    <th className="py-3 px-4 text-left">Email</th>
+                    <th className="py-3 px-4 text-left">Username</th>
+                    <th className="py-3 px-4 text-left">Rol</th>
+                    <th className="py-3 px-4 text-left">Estado</th>
+                    <th className="py-3 px-4 text-left">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {usuarios.length > 0 ? (
+                    usuarios.map((user, index) => (
+                      <tr
+                        key={user.id}
+                        style={{
+                          backgroundColor:
+                            index % 2 === 0 ? theme.colors.background.card : theme.colors.background.default
+                        }}
+                      >
+                        <td className="py-3 px-4" style={{ color: theme.colors.text.primary }}>
+                          {user.nombre} {user.apellido}
+                        </td>
+                        <td className="py-3 px-4" style={{ color: theme.colors.text.primary }}>
+                          {user.email}
+                        </td>
+                        <td className="py-3 px-4" style={{ color: theme.colors.text.primary }}>
+                          {user.username}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span
+                            className="px-2 py-1 rounded text-xs"
+                            style={{
+                              backgroundColor: user.rol === 'Admin' ? theme.colors.primary.main : theme.colors.status.info,
+                              color: theme.colors.text.white
+                            }}
+                          >
+                            {user.rol}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span
+                            className="px-2 py-1 rounded text-xs"
+                            style={{
+                              backgroundColor: user.isActive !== false ? theme.colors.status.success : theme.colors.status.error,
+                              color: theme.colors.text.white
+                            }}
+                          >
+                            {user.isActive !== false ? 'Activo' : 'Inactivo'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex space-x-2">
+                            <button
+                              className="px-3 py-1 rounded text-xs font-medium"
+                              style={{
+                                backgroundColor: theme.colors.secondary.main,
+                                color: theme.colors.secondary.contrast
+                              }}
+                              onClick={() => handleEditUser(user)}
+                              onMouseOver={e => (e.currentTarget.style.backgroundColor = theme.colors.secondary.hover)}
+                              onMouseOut={e => (e.currentTarget.style.backgroundColor = theme.colors.secondary.main)}
+                            >
+                              Editar
+                            </button>
+                            <button
+                              className="px-3 py-1 rounded text-xs font-medium"
+                              style={{
+                                backgroundColor: user.isActive !== false ? theme.colors.status.error : theme.colors.status.success,
+                                color: theme.colors.text.white
+                              }}
+                              onClick={() => handleToggleStatus(user.id, user.isActive !== false)}
+                            >
+                              {user.isActive !== false ? 'Inhabilitar' : 'Habilitar'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan="6"
+                        className="py-4 px-4 text-center"
+                        style={{ color: theme.colors.text.secondary }}
+                      >
+                        No hay usuarios disponibles
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 

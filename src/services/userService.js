@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { COLLECTIONS } from './constants';
 
@@ -20,6 +20,27 @@ export const getUserById = async (uid) => {
     }
   } catch (error) {
     console.error('Error al obtener usuario:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene todos los usuarios del sistema
+ * @returns {Promise<Array>} Array de usuarios
+ */
+export const getAllUsers = async () => {
+  try {
+    const colRef = collection(db, COLLECTIONS.USERS);
+    const querySnapshot = await getDocs(colRef);
+
+    const users = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    return users;
+  } catch (error) {
+    console.error('Error al obtener usuarios:', error);
     throw error;
   }
 };
@@ -91,6 +112,42 @@ export const getUserRole = async (uid) => {
     return userData ? userData.rol : null;
   } catch (error) {
     console.error('Error al obtener rol del usuario:', error);
+    throw error;
+  }
+};
+
+/**
+ * Cambia el estado activo/inactivo de un usuario
+ * @param {string} uid - UID del usuario
+ * @param {boolean} isActive - Nuevo estado (true = habilitado, false = inhabilitado)
+ * @returns {Promise<void>}
+ */
+export const toggleUserStatus = async (uid, isActive) => {
+  try {
+    const docRef = doc(db, COLLECTIONS.USERS, uid);
+    await updateDoc(docRef, {
+      isActive: isActive,
+      updatedAt: new Date().toISOString()
+    });
+    console.log(`Usuario ${isActive ? 'habilitado' : 'inhabilitado'} correctamente`);
+  } catch (error) {
+    console.error('Error al cambiar estado del usuario:', error);
+    throw error;
+  }
+};
+
+/**
+ * Verifica si un usuario está activo/habilitado
+ * @param {string} uid - UID del usuario
+ * @returns {Promise<boolean>} true si está activo, false si está inactivo o no existe
+ */
+export const isUserActive = async (uid) => {
+  try {
+    const userData = await getUserById(uid);
+    // Si no existe el campo isActive, asumimos que está activo (retrocompatibilidad)
+    return userData ? (userData.isActive !== false) : false;
+  } catch (error) {
+    console.error('Error al verificar estado del usuario:', error);
     throw error;
   }
 };

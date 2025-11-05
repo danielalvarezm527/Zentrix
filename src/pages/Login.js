@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import theme from '../styles/theme';
 import { auth } from '../firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { getUserRole } from '../services/userService';
+import { getUserRole, isUserActive } from '../services/userService';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -23,6 +23,16 @@ export default function Login() {
       const user = userCredential.user;
 
       console.log('Usuario autenticado:', user.email);
+
+      // Verificar si el usuario está habilitado
+      const userActive = await isUserActive(user.uid);
+      if (!userActive) {
+        // Cerrar sesión si el usuario está inhabilitado
+        await auth.signOut();
+        setMensaje('Tu cuenta ha sido inhabilitada. Contacta al administrador.');
+        setLoading(false);
+        return;
+      }
 
       // Obtener el rol del usuario desde Firestore
       const userRole = await getUserRole(user.uid);
