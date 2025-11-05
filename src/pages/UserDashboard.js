@@ -11,6 +11,7 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { getUserById } from '../services/userService';
 import { COLLECTIONS } from '../services/constants';
+import { generateUserNotifications } from '../services/notificationService';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement);
 
@@ -66,6 +67,11 @@ export default function UserDashboard() {
           setFilteredFacturas(invoicesData);
           console.log('Facturas del usuario cargadas:', invoicesData.length);
 
+          // Generar notificaciones automáticas basadas en facturas
+          console.log('Generando notificaciones automáticas...');
+          await generateUserNotifications(user.uid);
+          console.log('Notificaciones automáticas generadas');
+
           // Cargar notificaciones del usuario
           const notificationsQuery = query(
             collection(db, COLLECTIONS.NOTIFICATION),
@@ -98,7 +104,10 @@ export default function UserDashboard() {
                   invoice_number: invoice.invoice_number
                 };
 
-                if (daysUntilDue <= 3) {
+                // Clasificar según plazo de radicación (22 días)
+                // Crítica: 7 días o menos
+                // Normal: 8 a 22 días
+                if (daysUntilDue <= 7) {
                   urgent.push(alert);
                 } else {
                   normal.push(alert);

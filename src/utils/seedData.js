@@ -98,22 +98,39 @@ export const generateInvoices = async (count = 20) => {
     const userId = randomElement(USER_UIDS);
     const erpCompanyId = randomElement(ERP_COMPANY_IDS);
 
-    // Fechas: emisión en los últimos 3 meses, vencimiento 30-90 días después
-    const issueDate = randomDate(new Date(2024, 8, 1), new Date()); // Sep-Nov 2024
-    const daysToExpire = randomNumber(30, 90);
-    const dueDate = new Date(issueDate.getTime() + daysToExpire * 24 * 60 * 60 * 1000);
-
-    // Determinar estado basado en fecha de vencimiento
-    let status;
     const today = new Date();
-    const daysUntilDue = Math.floor((dueDate - today) / (1000 * 60 * 60 * 24));
+    let issueDate;
+    let dueDate;
+    let status;
 
-    if (daysUntilDue < 0) {
-      status = 'vencida';
-    } else if (daysUntilDue <= 5) {
+    // Distribuir facturas según el plazo de radicación de 22 días:
+    // 30% radicadas (ya procesadas)
+    // 35% pendientes normales (vencen en 8-22 días) - Notificaciones info
+    // 25% pendientes críticas (vencen en 1-7 días) - Notificaciones alerta
+    // 10% vencidas (vencidas hace 1-15 días) - Notificaciones alerta
+
+    const random = Math.random();
+
+    if (random < 0.3) {
+      // Radicadas - emisión hace 30-90 días, vencimiento hace 1-30 días
+      issueDate = new Date(today.getTime() - randomNumber(30, 90) * 24 * 60 * 60 * 1000);
+      dueDate = new Date(today.getTime() - randomNumber(1, 30) * 24 * 60 * 60 * 1000);
+      status = 'radicada';
+    } else if (random < 0.65) {
+      // Pendientes normales - emisión hace 1-15 días, vencen en 8-22 días
+      issueDate = new Date(today.getTime() - randomNumber(1, 15) * 24 * 60 * 60 * 1000);
+      dueDate = new Date(today.getTime() + randomNumber(8, 22) * 24 * 60 * 60 * 1000);
+      status = 'pendiente';
+    } else if (random < 0.9) {
+      // Pendientes críticas - emisión hace 15-30 días, vencen en 1-7 días
+      issueDate = new Date(today.getTime() - randomNumber(15, 30) * 24 * 60 * 60 * 1000);
+      dueDate = new Date(today.getTime() + randomNumber(1, 7) * 24 * 60 * 60 * 1000);
       status = Math.random() > 0.5 ? 'pendiente' : 'devuelta';
     } else {
-      status = randomElement(['radicada', 'pendiente']);
+      // Vencidas - emisión hace 30-60 días, vencidas hace 1-15 días
+      issueDate = new Date(today.getTime() - randomNumber(30, 60) * 24 * 60 * 60 * 1000);
+      dueDate = new Date(today.getTime() - randomNumber(1, 15) * 24 * 60 * 60 * 1000);
+      status = 'vencida';
     }
 
     const invoiceData = {
@@ -226,8 +243,7 @@ export const seedAllData = async () => {
 
   const results = {
     companies: [],
-    invoices: [],
-    notifications: []
+    invoices: []
   };
 
   try {
@@ -241,16 +257,13 @@ export const seedAllData = async () => {
     results.invoices = await generateInvoices(20);
     console.log(`✅ ${results.invoices.length} facturas creadas`);
 
-    // Generar notificaciones (15)
-    console.log('\n🔔 Generando notificaciones...');
-    results.notifications = await generateNotifications(results.invoices, 15);
-    console.log(`✅ ${results.notifications.length} notificaciones creadas`);
+    // Las notificaciones se generan automáticamente cuando el usuario entra al dashboard
+    console.log('\nℹ️  Las notificaciones se generarán automáticamente al iniciar sesión');
 
     console.log('\n✨ Seed completado exitosamente!');
     console.log('Resumen:');
     console.log(`  - Empresas ERP: ${results.companies.length}`);
     console.log(`  - Facturas: ${results.invoices.length}`);
-    console.log(`  - Notificaciones: ${results.notifications.length}`);
 
     return results;
   } catch (error) {

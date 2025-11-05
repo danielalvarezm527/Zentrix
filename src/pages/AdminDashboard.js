@@ -400,7 +400,7 @@ export default function AdminDashboard() {
       const results = await seedAllData();
 
       setSeedMessage({
-        text: `✅ Datos generados: ${results.companies.length} empresas, ${results.invoices.length} facturas, ${results.notifications.length} notificaciones`,
+        text: `✅ Datos generados: ${results.companies.length} empresas, ${results.invoices.length} facturas`,
         isError: false
       });
 
