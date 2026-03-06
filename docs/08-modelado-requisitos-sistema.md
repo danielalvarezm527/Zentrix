@@ -12,21 +12,21 @@ graph LR
             RF02("Recuperar contraseña")
             RF03("Crear usuario")
             RF04("Modificar datos de usuario")
-            RF05("Cambiar estado de usuario\ninactivo / activo")
+            RF05("Cambiar estado de usuario inactivo / activo")
         end
 
         subgraph GI["Gestión de Informes"]
             RF06("Consultar facturas propias")
             RF07("Consultar todas las facturas")
             RF08("Filtrar facturas")
-            RF09("Visualizar gráficas\nde indicadores")
-            RF10("Exportar informe\nen PDF / Excel")
+            RF09("Visualizar gráficas de indicadores")
+            RF10("Exportar informe en PDF / Excel")
         end
 
         subgraph GA["Gestión de Alertas"]
-            RF11("Generar alertas automáticas\npor vencimiento de factura")
-            RF12("Consultar alertas\ny notificaciones")
-            RF13("Marcar notificación\ncomo leída")
+            RF11("Generar alertas automáticas por vencimiento de factura")
+            RF12("Consultar alertas y notificaciones")
+            RF13("Marcar notificación como leída")
         end
 
     end

@@ -6,9 +6,9 @@ graph LR
     User(["👤 Usuario"])
 
     subgraph Zentrix["  Sistema Zentrix  "]
-        GU("Gestión de\nUsuarios")
-        GI("Gestión de\nInformes")
-        GA("Gestión de\nAlertas")
+        GU("Gestión de Usuarios")
+        GI("Gestión de Informes")
+        GA("Gestión de Alertas")
     end
 
     Admin --> GU

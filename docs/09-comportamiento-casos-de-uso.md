@@ -18,12 +18,12 @@ graph LR
         RP("Recuperar contraseña")
         RU("Registrar usuario")
         MU("Modificar usuario")
-        CS("Cambiar estado\nde usuario")
+        CS("Cambiar estado de usuario")
 
-        VSA("Verificar estado\nactivo")
-        VR("Verificar rol\ndel usuario")
-        VD("Validar unicidad\nde datos")
-        AR("Asignar rol\nal usuario")
+        VSA("Verificar estado activo")
+        VR("Verificar rol del usuario")
+        VD("Validar unicidad de datos")
+        AR("Asignar rol al usuario")
     end
 
     Admin --> IS
@@ -53,11 +53,11 @@ graph LR
     User(["👤 Usuario"])
 
     subgraph GI["Gestión de Informes"]
-        CF("Consultar\nfacturas")
-        FF("Filtrar\nfacturas")
-        VG("Visualizar\ngráficas")
-        EP("Exportar informe\nPDF")
-        EE("Exportar informe\nExcel")
+        CF("Consultar facturas")
+        FF("Filtrar facturas")
+        VG("Visualizar gráficas")
+        EP("Exportar informe PDF")
+        EE("Exportar informe Excel")
     end
 
     Admin --> CF
@@ -87,14 +87,14 @@ graph LR
     User(["👤 Usuario"])
 
     subgraph GA["Gestión de Alertas"]
-        GA1("Generar alertas\nautomáticas")
-        CN("Consultar\nnotificaciones")
-        ML("Marcar notificación\ncomo leída")
+        GA1("Generar alertas automáticas")
+        CN("Consultar notificaciones")
+        ML("Marcar notificación como leída")
 
-        CFF("Consultar facturas\ndel usuario")
-        CV("Calcular días\nhasta vencimiento")
-        NA("Crear notificación\ntipo «alerta»")
-        NI("Crear notificación\ntipo «info»")
+        CFF("Consultar facturas del usuario")
+        CV("Calcular días hasta vencimiento")
+        NA("Crear notificación tipo «alerta»")
+        NI("Crear notificación tipo «info»")
     end
 
     Admin --> CN
@@ -118,20 +118,3 @@ graph LR
 | `──────►` | Asociación | El actor participa en el caso de uso |
 | `- - -►` «include» | Include | El caso base **siempre** llama al incluido |
 | `- - -►` «extend» | Extend | El caso extensor se activa **condicionalmente** |
-
-
-  Gestión de Usuarios
-  - Iniciar sesión «include» verificar estado activo y verificar rol → siempre se ejecutan
-  - Recuperar contraseña «extend» iniciar sesión → solo cuando el usuario no puede acceder
-  - Registrar usuario «include» validar datos y asignar rol → siempre obligatorio
-  - Cambiar estado «extend» modificar usuario → es una acción opcional sobre el usuario
-
-  Gestión de Informes
-  - Visualizar gráficas, Exportar PDF/Excel «include» consultar facturas → siempre necesitan los datos primero
-  - Filtrar facturas «extend» consultar facturas → opcional
-  - Exportar «extend» filtrar → se puede exportar con o sin filtros aplicados
-
-  Gestión de Alertas
-  - Generar alertas «include» consultar facturas y calcular días → pasos obligatorios
-  - Notificación alerta/info «extend» generar → condicional según los días restantes
-  - Marcar como leída «extend» consultar notificaciones → acción opcional del usuario
