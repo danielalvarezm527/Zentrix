@@ -230,6 +230,7 @@ export default function ResetPassword() {
                   style={{ borderColor: theme.colors.border.main }}
                   required
                   minLength="6"
+                  maxLength="20"
                 />
               </div>
 
@@ -245,6 +246,7 @@ export default function ResetPassword() {
                   style={{ borderColor: theme.colors.border.main }}
                   required
                   minLength="6"
+                  maxLength="20"
                 />
               </div>
 

@@ -106,6 +106,8 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
               className="input"
               required
+              minLength="6"
+              maxLength="20"
             />
             <div style={{ fontSize: 13, color: '#18404b', textAlign: 'center', marginBottom: 16 }}>
               <Link to="/forgot-password">¿Olvidaste tu contraseña?</Link>

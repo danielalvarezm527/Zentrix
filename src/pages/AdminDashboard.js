@@ -839,6 +839,8 @@ export default function AdminDashboard() {
                   style={{ borderColor: theme.colors.border.main }}
                   disabled={isRegistering}
                   required
+                  minLength="6"
+                  maxLength="20"
                 />
               </div>
 

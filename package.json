@@ -43,6 +43,34 @@
       "last 1 safari version"
     ]
   },
+  "jest": {
+    "moduleNameMapper": {
+      "^react-router-dom$": "<rootDir>/node_modules/react-router-dom/dist/index.js",
+      "^react-router/dom$": "<rootDir>/node_modules/react-router/dist/development/dom-export.js",
+      "^react-router$": "<rootDir>/node_modules/react-router/dist/development/index.js"
+    },
+    "transformIgnorePatterns": [
+      "node_modules/(?!(react-router|react-router-dom|@remix-run)/)"
+    ],
+    "collectCoverageFrom": [
+      "src/services/userService.js",
+      "src/services/invoiceService.js",
+      "src/services/notificationService.js",
+      "src/services/constants.js",
+      "src/pages/Home.js",
+      "src/pages/Login.js",
+      "src/pages/ForgotPassword.js"
+    ],
+    "coverageReporters": ["text", "lcov", "html"],
+    "coverageThreshold": {
+      "global": {
+        "lines": 80,
+        "functions": 80,
+        "branches": 70,
+        "statements": 80
+      }
+    }
+  },
   "devDependencies": {
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
