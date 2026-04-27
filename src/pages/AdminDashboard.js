@@ -598,7 +598,7 @@ export default function AdminDashboard() {
     doc.text('Fecha Emisión', 130, 30);
     doc.text('Fecha Vencimiento', 170, 30);
 
-    facturas.forEach((factura, index) => {
+    filteredFacturas.forEach((factura, index) => {
       const y = 40 + index * 10;
       doc.text(`#${factura.invoice_number}`, 10, y);
       doc.text(factura.user_name, 35, y);
@@ -626,7 +626,7 @@ export default function AdminDashboard() {
   };
 
   const exportInvoicesToExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(facturas);
+    const worksheet = XLSX.utils.json_to_sheet(filteredFacturas);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Facturas');
     XLSX.writeFile(workbook, 'facturas.xlsx');
@@ -644,7 +644,7 @@ export default function AdminDashboard() {
     doc.text('Tipo', 140, 30);
     doc.text('Fecha', 180, 30);
 
-    notificaciones.forEach((notif, index) => {
+    filteredNotificaciones.forEach((notif, index) => {
       const y = 40 + index * 10;
       doc.text(notif.message.substring(0, 50), 20, y);
       doc.text(notif.user_name, 100, y);
@@ -657,7 +657,7 @@ export default function AdminDashboard() {
   };
 
   const exportNotificationsToExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(notificaciones);
+    const worksheet = XLSX.utils.json_to_sheet(filteredNotificaciones);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Notificaciones');
     XLSX.writeFile(workbook, 'notificaciones.xlsx');
