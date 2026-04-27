@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import theme from '../styles/theme';
 import { jsPDF } from 'jspdf';
 import * as XLSX from 'xlsx';
-import { FaHome, FaBell, FaUserPlus, FaSignOutAlt, FaSeedling, FaUsers } from 'react-icons/fa';
+import { FaHome, FaBell, FaUserPlus, FaSignOutAlt, FaSeedling, FaUsers, FaDatabase } from 'react-icons/fa';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement } from 'chart.js';
 import { Pie, Bar } from 'react-chartjs-2';
 import { auth, db } from '../firebase';
@@ -11,7 +11,7 @@ import { createUserWithEmailAndPassword, deleteUser, signOut } from 'firebase/au
 import { doc, setDoc, query, where, collection, getDocs } from 'firebase/firestore';
 import { saveUserData, getAllUsers, updateUser, toggleUserStatus } from '../services/userService';
 import { COLLECTIONS } from '../services/constants';
-import { seedAllData } from '../utils/seedData';
+import { seedAllData, clearDatabase } from '../utils/seedData';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement);
 
@@ -48,6 +48,8 @@ export default function AdminDashboard() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
   const [seedMessage, setSeedMessage] = useState({ text: '', isError: false });
+  const [showTestDataPanel, setShowTestDataPanel] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
 
   // Estados para gestión de usuarios
   const [showUserManagement, setShowUserManagement] = useState(false);
@@ -340,11 +342,6 @@ export default function AdminDashboard() {
 
         setIsRegistering(false);
 
-        setTimeout(() => {
-          setRegisterMessage({ text: '', isError: false });
-          setShowRegisterForm(false);
-        }, 3000);
-
       } catch (firestoreError) {
         console.error('Error al guardar en Firestore:', firestoreError);
 
@@ -389,26 +386,16 @@ export default function AdminDashboard() {
   };
 
   const handleSeedData = async () => {
-    if (!window.confirm('¿Estás seguro de que deseas generar datos de prueba? Esto creará empresas, facturas y notificaciones dummy.')) {
-      return;
-    }
-
     setIsSeeding(true);
     setSeedMessage({ text: '', isError: false });
 
     try {
       const results = await seedAllData();
-
       setSeedMessage({
         text: `✅ Datos generados: ${results.companies.length} empresas, ${results.invoices.length} facturas`,
         isError: false
       });
-
-      // Recargar la página después de 3 segundos para mostrar los nuevos datos
-      setTimeout(() => {
-        window.location.reload();
-      }, 3000);
-
+      setTimeout(() => window.location.reload(), 2000);
     } catch (error) {
       console.error('Error al generar datos:', error);
       setSeedMessage({
@@ -417,6 +404,32 @@ export default function AdminDashboard() {
       });
     } finally {
       setIsSeeding(false);
+    }
+  };
+
+  const handleClearDatabase = async () => {
+    if (!window.confirm('¿Eliminar todas las facturas y alertas? Esta acción no se puede deshacer.')) {
+      return;
+    }
+
+    setIsClearing(true);
+    setSeedMessage({ text: '', isError: false });
+
+    try {
+      const results = await clearDatabase();
+      setSeedMessage({
+        text: `✅ Base de datos limpiada: ${results.Invoice ?? 0} facturas, ${results.Notification ?? 0} alertas y ${results.Erpcompany ?? 0} empresas eliminadas`,
+        isError: false
+      });
+      setTimeout(() => window.location.reload(), 2000);
+    } catch (error) {
+      console.error('Error al limpiar la base de datos:', error);
+      setSeedMessage({
+        text: `❌ Error al limpiar: ${error.message}`,
+        isError: true
+      });
+    } finally {
+      setIsClearing(false);
     }
   };
 
@@ -498,10 +511,6 @@ export default function AdminDashboard() {
 
       // Recargar la lista de usuarios
       await loadUsers();
-
-      setTimeout(() => {
-        setEditMessage({ text: '', isError: false });
-      }, 3000);
     } catch (error) {
       console.error('Error al cambiar estado del usuario:', error);
       setEditMessage({
@@ -705,12 +714,14 @@ export default function AdminDashboard() {
           </button>
           <button
             className="hover:bg-white/10 p-3 rounded-lg transition"
-            title="Generar datos de prueba"
-            onClick={handleSeedData}
-            disabled={isSeeding}
-            style={{ opacity: isSeeding ? 0.5 : 1 }}
+            title="Datos de prueba"
+            onClick={() => {
+              setShowTestDataPanel(!showTestDataPanel);
+              setShowRegisterForm(false);
+              setShowUserManagement(false);
+            }}
           >
-            <FaSeedling size={26} color="#fff" />
+            <FaDatabase size={26} color="#fff" />
           </button>
         </div>
         <button
@@ -726,18 +737,56 @@ export default function AdminDashboard() {
           <h1 className="dashboard-title">Dashboard Admin</h1>
         </div>
 
-        {seedMessage.text && (
-          <div
-            className="mb-4 p-3 rounded text-center"
-            style={{
-              backgroundColor: seedMessage.isError
-                ? theme.colors.status.error
-                : theme.colors.status.success,
-              color: theme.colors.text.white,
-              marginBottom: 16
-            }}
-          >
-            {seedMessage.text}
+        {showTestDataPanel && (
+          <div className="dashboard-card" style={{ marginBottom: 32 }}>
+            <h2 className="text-xl font-semibold mb-2" style={{ color: theme.colors.text.primary }}>
+              Datos de Prueba
+            </h2>
+            <p className="mb-6" style={{ color: theme.colors.text.secondary, fontSize: 14 }}>
+              Gestiona los datos dummy de la base de datos. Las facturas se generan con fechas relativas al momento actual.
+            </p>
+
+            {seedMessage.text && (
+              <div
+                className="mb-4 p-3 rounded text-center"
+                style={{
+                  backgroundColor: seedMessage.isError ? theme.colors.status.error : theme.colors.status.success,
+                  color: theme.colors.text.white
+                }}
+              >
+                {seedMessage.text}
+              </div>
+            )}
+
+            <div className="flex gap-4">
+              <button
+                onClick={handleClearDatabase}
+                disabled={isClearing || isSeeding}
+                className="flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition"
+                style={{
+                  backgroundColor: theme.colors.status.error,
+                  color: '#fff',
+                  opacity: isClearing ? 0.6 : 1,
+                  cursor: isClearing ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {isClearing ? 'Limpiando...' : '🗑️ Limpiar DB'}
+              </button>
+
+              <button
+                onClick={handleSeedData}
+                disabled={isSeeding || isClearing}
+                className="flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition"
+                style={{
+                  backgroundColor: theme.colors.status.success,
+                  color: '#fff',
+                  opacity: isSeeding ? 0.6 : 1,
+                  cursor: isSeeding ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {isSeeding ? 'Generando...' : '🌱 Crear datos'}
+              </button>
+            </div>
           </div>
         )}
 
