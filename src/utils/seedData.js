@@ -1,4 +1,4 @@
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { COLLECTIONS } from '../services/constants';
 
@@ -233,6 +233,24 @@ export const generateNotifications = async (invoices = null, count = 15) => {
   }
 
   return createdNotifications;
+};
+
+/**
+ * Elimina todas las facturas y notificaciones de la DB
+ */
+export const clearDatabase = async () => {
+  const collectionsToDelete = [COLLECTIONS.INVOICE, COLLECTIONS.NOTIFICATION, COLLECTIONS.ERPCOMPANY];
+  const results = {};
+
+  for (const col of collectionsToDelete) {
+    const snapshot = await getDocs(collection(db, col));
+    const deletions = snapshot.docs.map(d => deleteDoc(doc(db, col, d.id)));
+    await Promise.all(deletions);
+    results[col] = snapshot.docs.length;
+    console.log(`🗑️ ${snapshot.docs.length} documentos eliminados de ${col}`);
+  }
+
+  return results;
 };
 
 /**
