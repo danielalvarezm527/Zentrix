@@ -91,7 +91,6 @@ export const generateErpCompanies = async (count = 3) => {
  * Genera datos dummy para facturas
  */
 export const generateInvoices = async (count = 20) => {
-  const statuses = ['radicada', 'pendiente', 'devuelta', 'vencida'];
   const createdInvoices = [];
 
   for (let i = 0; i < count; i++) {
